@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlexIQ - AI-Powered Media Management</title>
+
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Axios for API calls -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-film"></i>
+                        <h1>PlexIQ</h1>
+                        <span class="subtitle">AI-Powered Media Management</span>
+                    </div>
+                    <div class="header-actions">
+                        <button @click="refreshAnalysis" class="btn btn-primary" :disabled="isAnalyzing">
+                            <i class="fas fa-sync-alt" :class="{ 'fa-spin': isAnalyzing }"></i>
+                            {{ isAnalyzing ? 'Analyzing...' : 'Refresh Analysis' }}
+                        </button>
+                        <button @click="clearCache" class="btn btn-secondary">
+                            <i class="fas fa-trash"></i>
+                            Clear Cache
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="container">
+
+                <!-- Analysis in Progress -->
+                <div v-if="isAnalyzing" class="analysis-progress">
+                    <div class="progress-card">
+                        <h2>{{ analysisStatus.current_step || 'Preparing analysis...' }}</h2>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" :style="{ width: analysisStatus.progress + '%' }"></div>
+                        </div>
+                        <p class="progress-text">{{ analysisStatus.progress }}%</p>
+                        <p class="progress-info" v-if="analysisStatus.total">
+                            Processing {{ analysisStatus.progress }} of {{ analysisStatus.total }} movies
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div v-if="error" class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>{{ error }}</p>
+                </div>
+
+                <!-- Stats Dashboard -->
+                <div v-if="stats && !isAnalyzing" class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-film"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ stats.total_movies }}</h3>
+                            <p>Total Movies</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ stats.total_size_gb.toFixed(1) }} GB</h3>
+                            <p>Total Storage</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon danger">
+                            <i class="fas fa-eye-slash"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ stats.never_watched }}</h3>
+                            <p>Never Watched</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon success">
+                            <i class="fas fa-hdd"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ stats.space_recovery.top_50_gb.toFixed(1) }} GB</h3>
+                            <p>Recoverable (Top 50)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delete Priority Distribution Chart -->
+                <div v-if="stats && !isAnalyzing" class="chart-section">
+                    <div class="card">
+                        <h2>Delete Priority Distribution</h2>
+                        <canvas id="priorityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div v-if="movies.length > 0 && !isAnalyzing" class="filters-section">
+                    <div class="card">
+                        <h2>Filters</h2>
+                        <div class="filters">
+                            <div class="filter-group">
+                                <label>Minimum Delete Score:</label>
+                                <input type="range" v-model="filters.minScore" min="0" max="100" step="5">
+                                <span class="filter-value">{{ filters.minScore }}</span>
+                            </div>
+                            <div class="filter-group">
+                                <label>Search:</label>
+                                <input type="text" v-model="filters.search" placeholder="Search by title...">
+                            </div>
+                            <div class="filter-group">
+                                <label>Sort By:</label>
+                                <select v-model="filters.sortBy">
+                                    <option value="delete_score">Delete Score</option>
+                                    <option value="file_size_gb">File Size</option>
+                                    <option value="title">Title</option>
+                                    <option value="year">Year</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Movies Table / Grid -->
+                <div v-if="filteredMovies.length > 0 && !isAnalyzing" class="movies-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Delete Candidates ({{ filteredMovies.length }} movies)</h2>
+                            <div class="view-toggle">
+                                <button @click="viewMode = 'table'" :class="{ active: viewMode === 'table' }">
+                                    <i class="fas fa-table"></i> Table
+                                </button>
+                                <button @click="viewMode = 'grid'" :class="{ active: viewMode === 'grid' }">
+                                    <i class="fas fa-th"></i> Grid
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Table View -->
+                        <div v-if="viewMode === 'table'" class="table-container">
+                            <table class="movies-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Title</th>
+                                        <th>Year</th>
+                                        <th>Delete Score</th>
+                                        <th>Size (GB)</th>
+                                        <th>Views</th>
+                                        <th>Ratings</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(movie, index) in paginatedMovies" :key="index"
+                                        :class="getScoreClass(movie.delete_score)">
+                                        <td class="rank">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+                                        <td class="title">
+                                            <strong>{{ movie.title }}</strong>
+                                        </td>
+                                        <td>{{ movie.year }}</td>
+                                        <td class="score">
+                                            <div class="score-badge" :class="getScoreBadgeClass(movie.delete_score)">
+                                                {{ movie.delete_score }}
+                                            </div>
+                                        </td>
+                                        <td>{{ movie.file_size_gb.toFixed(2) }}</td>
+                                        <td>{{ movie.view_count }}</td>
+                                        <td>
+                                            <div class="ratings">
+                                                <span v-if="movie.omdb_imdb_rating" class="rating-badge imdb">
+                                                    IMDb {{ movie.omdb_imdb_rating }}
+                                                </span>
+                                                <span v-if="movie.omdb_rotten_tomatoes" class="rating-badge rt">
+                                                    RT {{ movie.omdb_rotten_tomatoes }}%
+                                                </span>
+                                                <span v-if="movie.tmdb_rating" class="rating-badge tmdb">
+                                                    TMDb {{ movie.tmdb_rating }}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="reason">{{ movie.delete_reason }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Grid View -->
+                        <div v-if="viewMode === 'grid'" class="movies-grid">
+                            <div v-for="(movie, index) in paginatedMovies" :key="index"
+                                class="movie-card" :class="getScoreClass(movie.delete_score)">
+                                <div class="movie-card-header">
+                                    <div class="movie-rank">#{{ (currentPage - 1) * pageSize + index + 1 }}</div>
+                                    <div class="movie-score" :class="getScoreBadgeClass(movie.delete_score)">
+                                        {{ movie.delete_score }}
+                                    </div>
+                                </div>
+                                <h3>{{ movie.title }}</h3>
+                                <div class="movie-meta">
+                                    <span><i class="fas fa-calendar"></i> {{ movie.year }}</span>
+                                    <span><i class="fas fa-hdd"></i> {{ movie.file_size_gb.toFixed(1) }} GB</span>
+                                    <span><i class="fas fa-eye"></i> {{ movie.view_count }} views</span>
+                                </div>
+                                <div class="movie-ratings">
+                                    <span v-if="movie.omdb_imdb_rating" class="rating-badge imdb">
+                                        IMDb {{ movie.omdb_imdb_rating }}
+                                    </span>
+                                    <span v-if="movie.omdb_rotten_tomatoes" class="rating-badge rt">
+                                        RT {{ movie.omdb_rotten_tomatoes }}%
+                                    </span>
+                                    <span v-if="movie.tmdb_rating" class="rating-badge tmdb">
+                                        TMDb {{ movie.tmdb_rating }}
+                                    </span>
+                                </div>
+                                <p class="movie-reason">{{ movie.delete_reason }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="pagination">
+                            <button @click="prevPage" :disabled="currentPage === 1" class="btn btn-sm">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <span class="page-info">
+                                Page {{ currentPage }} of {{ totalPages }}
+                            </span>
+                            <button @click="nextPage" :disabled="currentPage === totalPages" class="btn btn-sm">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Welcome Screen -->
+                <div v-if="!stats && !isAnalyzing && !error" class="welcome-message">
+                    <div class="card welcome-card">
+                        <i class="fas fa-rocket"></i>
+                        <h2>Welcome to PlexIQ!</h2>
+                        <p>AI-powered analysis for your Plex media library</p>
+                        <p>Click below to start scanning your collection</p>
+                        <button @click="refreshAnalysis" class="btn btn-primary btn-lg">
+                            <i class="fas fa-play"></i>
+                            Start Analysis
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p>PlexIQ v1.0.0 | Built without ketchup by Team Hotdog</p>
+                <p v-if="stats && stats.last_updated" class="last-updated">
+                    Last updated: {{ formatDate(stats.last_updated) }}
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
