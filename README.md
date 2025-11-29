@@ -1,4 +1,4 @@
-# PlexIQ 🎬
+# 💫🎬 PlexIQ 🎬✨
 
  
 
@@ -512,7 +512,7 @@ plexiq/
 
  
 
-Made with MUSTARD ONLY 🌭
+Made with MUSTARD ONLY 🌭 by Richard & Emmett Knowles
 
  
 
