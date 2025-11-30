@@ -432,6 +432,16 @@
                     </div>
 
                     <div v-if="deleteConfirmStep === 3" class="password-verification">
+                        <div class="delete-options">
+                            <label class="delete-option-checkbox">
+                                <input type="checkbox" v-model="deleteConfirm.deleteFiles" id="confirmDeleteFiles">
+                                <span>
+                                    <strong>Also delete physical files from disk</strong>
+                                    <span class="option-hint">(Recommended - frees up actual space. Uncheck to only remove from Plex library.)</span>
+                                </span>
+                            </label>
+                        </div>
+
                         <label>Enter your system password to confirm:</label>
                         <input type="password"
                                v-model="deleteConfirm.password"
