@@ -1112,11 +1112,51 @@ body {
     border-radius: 8px;
 }
 
-.password-verification label {
+.password-verification > label {
     display: block;
     margin-bottom: 0.75rem;
     color: var(--text);
     font-weight: 600;
+}
+
+.delete-options {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+}
+
+.delete-option-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.delete-option-checkbox input[type="checkbox"] {
+    margin-top: 0.25rem;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.delete-option-checkbox span {
+    flex: 1;
+}
+
+.delete-option-checkbox strong {
+    display: block;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+}
+
+.option-hint {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: normal;
 }
 
 .password-input {

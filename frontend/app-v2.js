@@ -49,7 +49,8 @@ createApp({
                 step1: false,
                 step2: false,
                 step3: false,
-                password: ''
+                password: '',
+                deleteFiles: true  // Also delete physical files (THE WHOLE POINT!)
             },
 
             // Chart
@@ -328,7 +329,7 @@ createApp({
                 const response = await axios.post(`${this.apiBaseUrl}/delete`, {
                     rating_keys: this.selectedMovies,
                     password: this.deleteConfirm.password,
-                    delete_files: false,  // Only delete from Plex, not physical files (safer)
+                    delete_files: this.deleteConfirm.deleteFiles,  // Actually delete the files!
                     untouchables: this.untouchables
                 });
 
@@ -389,7 +390,8 @@ createApp({
                 step1: false,
                 step2: false,
                 step3: false,
-                password: ''
+                password: '',
+                deleteFiles: true  // Reset to true (actually delete files)
             };
         },
 
