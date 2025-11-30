@@ -346,7 +346,7 @@ def delete_movies():
     # Get parameters
     rating_keys = data.get('rating_keys', [])
     password = data.get('password', '')
-    delete_files = data.get('delete_files', False)  # Optional: also delete from disk
+    delete_files = data.get('delete_files', True)  # Optional: also delete from disk
     untouchables = data.get('untouchables', [])  # Frontend's untouchables list
 
     # Validate inputs
