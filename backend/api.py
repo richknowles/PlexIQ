@@ -335,6 +335,133 @@ def clear_cache():
     })
 
 
+@app.route('/api/delete', methods=['POST'])
+def delete_movies():
+    """Delete movies from Plex (and optionally from disk)"""
+    data = request.json
+
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    # Get parameters
+    rating_keys = data.get('rating_keys', [])
+    password = data.get('password', '')
+    delete_files = data.get('delete_files', False)  # Optional: also delete from disk
+    untouchables = data.get('untouchables', [])  # Frontend's untouchables list
+
+    # Validate inputs
+    if not rating_keys:
+        return jsonify({'error': 'No movies specified'}), 400
+
+    if not password:
+        return jsonify({'error': 'Password required'}), 400
+
+    # Verify password
+    DELETE_PASSWORD = os.getenv('DELETE_PASSWORD', 'plexiq2024')
+    if password != DELETE_PASSWORD:
+        return jsonify({'error': 'Invalid password'}), 403
+
+    # Double-check untouchables (don't trust frontend alone)
+    protected_movies = [key for key in rating_keys if key in untouchables]
+    if protected_movies:
+        return jsonify({
+            'error': 'Cannot delete protected movies',
+            'protected_count': len(protected_movies)
+        }), 403
+
+    # Connect to Plex
+    collector = PlexCollector(PLEX_URL, PLEX_TOKEN)
+    if not collector.connect():
+        return jsonify({'error': 'Failed to connect to Plex server'}), 500
+
+    # Get movie library
+    movies_lib = collector.get_movie_library()
+    if not movies_lib:
+        return jsonify({'error': 'Movie library not found'}), 500
+
+    # Perform deletions
+    results = {
+        'total': len(rating_keys),
+        'succeeded': [],
+        'failed': [],
+        'space_freed_gb': 0
+    }
+
+    for rating_key in rating_keys:
+        try:
+            # Find movie by rating key
+            movie = None
+            for m in movies_lib.all():
+                if m.ratingKey == rating_key:
+                    movie = m
+                    break
+
+            if not movie:
+                results['failed'].append({
+                    'rating_key': rating_key,
+                    'title': 'Unknown',
+                    'error': 'Movie not found'
+                })
+                continue
+
+            # Calculate size before deletion
+            file_size_gb = 0
+            file_paths = []
+            if movie.media:
+                for media in movie.media:
+                    for part in media.parts:
+                        if part.size:
+                            file_size_gb += part.size / (1024 ** 3)
+                        if part.file:
+                            file_paths.append(part.file)
+
+            movie_title = movie.title
+            movie_year = movie.year if hasattr(movie, 'year') else 'N/A'
+
+            # Delete from Plex
+            movie.delete()
+
+            # Optionally delete physical files
+            files_deleted = []
+            if delete_files:
+                import os as os_module
+                for file_path in file_paths:
+                    try:
+                        if os_module.path.exists(file_path):
+                            os_module.remove(file_path)
+                            files_deleted.append(file_path)
+                    except Exception as e:
+                        print(f"Failed to delete file {file_path}: {e}")
+
+            # Success
+            results['succeeded'].append({
+                'rating_key': rating_key,
+                'title': movie_title,
+                'year': movie_year,
+                'size_gb': round(file_size_gb, 2),
+                'files_deleted': files_deleted if delete_files else []
+            })
+            results['space_freed_gb'] += file_size_gb
+
+        except Exception as e:
+            results['failed'].append({
+                'rating_key': rating_key,
+                'title': movie_title if 'movie_title' in locals() else 'Unknown',
+                'error': str(e)
+            })
+
+    # Round space freed
+    results['space_freed_gb'] = round(results['space_freed_gb'], 2)
+
+    # Clear cache since data changed
+    global cached_results
+    if os.path.exists(CACHE_FILE):
+        os.remove(CACHE_FILE)
+    cached_results = None
+
+    return jsonify(results)
+
+
 # ==================== STARTUP ====================
 if __name__ == '__main__':
     print("PlexIQ API Starting...")
