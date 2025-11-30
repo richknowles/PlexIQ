@@ -313,25 +313,75 @@ createApp({
         },
 
         // ==================== DELETE OPERATIONS ====================
-        executeMassDelete() {
+        async executeMassDelete() {
             if (!this.canExecuteDelete) return;
 
-            // TODO: Implement actual delete operation via API
-            // For now, just show what would be deleted
-            const moviesToDelete = this.selectedMovies.map(key => {
-                const movie = this.movies.find(m => m.rating_key === key);
-                return movie ? movie.title : 'Unknown';
-            });
+            // Show loading state
+            const deleteBtn = document.querySelector('.modal-danger .btn-danger');
+            if (deleteBtn) {
+                deleteBtn.disabled = true;
+                deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            }
 
-            console.log('Would delete:', moviesToDelete);
-            console.log('Password entered:', this.deleteConfirm.password);
+            try {
+                // Call delete API
+                const response = await axios.post(`${this.apiBaseUrl}/delete`, {
+                    rating_keys: this.selectedMovies,
+                    password: this.deleteConfirm.password,
+                    delete_files: false,  // Only delete from Plex, not physical files (safer)
+                    untouchables: this.untouchables
+                });
 
-            // Close modal and reset
-            alert(`Delete functionality not yet implemented.\n\nWould delete ${this.selectedMovies.length} movies:\n${moviesToDelete.slice(0, 5).join(', ')}${moviesToDelete.length > 5 ? '...' : ''}`);
+                const results = response.data;
 
-            this.showMassDeleteConfirm = false;
-            this.resetDeleteConfirmation();
-            this.clearSelection();
+                // Show results
+                let message = `✅ Deletion Complete!\n\n`;
+                message += `Successfully deleted: ${results.succeeded.length} movies\n`;
+                message += `Failed: ${results.failed.length} movies\n`;
+                message += `Space freed: ${results.space_freed_gb} GB\n\n`;
+
+                if (results.succeeded.length > 0) {
+                    message += `Deleted movies:\n`;
+                    results.succeeded.slice(0, 10).forEach(m => {
+                        message += `  • ${m.title} (${m.year}) - ${m.size_gb} GB\n`;
+                    });
+                    if (results.succeeded.length > 10) {
+                        message += `  ... and ${results.succeeded.length - 10} more\n`;
+                    }
+                }
+
+                if (results.failed.length > 0) {
+                    message += `\n⚠️ Failed deletions:\n`;
+                    results.failed.forEach(m => {
+                        message += `  • ${m.title}: ${m.error}\n`;
+                    });
+                }
+
+                alert(message);
+
+                // Close modal and reset
+                this.showMassDeleteConfirm = false;
+                this.resetDeleteConfirmation();
+                this.clearSelection();
+
+                // Reload data
+                await this.loadData();
+
+            } catch (err) {
+                let errorMsg = 'Delete operation failed:\n\n';
+                if (err.response) {
+                    errorMsg += err.response.data.error || err.response.statusText;
+                } else {
+                    errorMsg += err.message;
+                }
+                alert(errorMsg);
+
+                // Re-enable button
+                if (deleteBtn) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = `<i class="fas fa-trash-alt"></i> Delete ${this.selectedMovies.length} Movies`;
+                }
+            }
         },
 
         resetDeleteConfirmation() {
