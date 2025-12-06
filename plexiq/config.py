@@ -17,12 +17,13 @@ class Config:
     Loads from .env file with safe defaults.
     """
 
-    def __init__(self, env_file: Optional[str] = None):
+    def __init__(self, env_file: Optional[str] = None, require_token: bool = True):
         """
         Initialize configuration from environment.
 
         Args:
             env_file: Path to .env file (defaults to .env in project root)
+            require_token: Whether to require Plex token (False for setup mode)
         """
         if env_file:
             load_dotenv(env_file)
@@ -31,7 +32,7 @@ class Config:
             load_dotenv()
 
         self._config = self._load_config()
-        self._validate_config()
+        self._validate_config(require_token=require_token)
 
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from environment variables with defaults."""
@@ -89,15 +90,18 @@ class Config:
 
         return config
 
-    def _validate_config(self) -> None:
+    def _validate_config(self, require_token: bool = True) -> None:
         """
         Validate configuration values and create necessary directories.
         Raises ValueError for invalid configurations.
+
+        Args:
+            require_token: Whether to require Plex token (False for setup mode)
         """
-        # Validate Plex token exists
-        if not self._config['plex']['token']:
+        # Validate Plex token exists (if required)
+        if require_token and not self._config['plex']['token']:
             raise ValueError(
-                "PLEX_TOKEN not set. Please configure .env file. "
+                "PLEX_TOKEN not set. Please run 'plexiq setup' to configure. "
                 "See .env.example for reference."
             )
 
@@ -191,6 +195,16 @@ class Config:
         """Get logging level."""
         return self.get('app.log_level', 'INFO')
 
+    def has_valid_token(self) -> bool:
+        """
+        Check if configuration has a token set.
+
+        Returns:
+            True if token exists, False otherwise
+        """
+        token = self.get('plex.token')
+        return bool(token and len(token) > 0)
+
     def __repr__(self) -> str:
         """String representation (hides sensitive data)."""
         safe_config = self._config.copy()
@@ -204,19 +218,20 @@ class Config:
 _config_instance: Optional[Config] = None
 
 
-def get_config(env_file: Optional[str] = None) -> Config:
+def get_config(env_file: Optional[str] = None, require_token: bool = True) -> Config:
     """
     Get or create global configuration instance.
 
     Args:
         env_file: Path to .env file (only used on first call)
+        require_token: Whether to require Plex token (False for setup mode)
 
     Returns:
         Global Config instance
     """
     global _config_instance
     if _config_instance is None:
-        _config_instance = Config(env_file)
+        _config_instance = Config(env_file, require_token=require_token)
     return _config_instance
 
 

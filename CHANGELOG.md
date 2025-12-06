@@ -106,6 +106,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.0] - 2025-12-06
+
+### Added - Guided Token Installer
+- **Interactive Setup Wizard**: Multi-step GUI wizard for token configuration
+  - Welcome screen with feature overview
+  - Method selection (browser-based or manual)
+  - Browser-based token capture using PyQt WebEngine
+  - Manual token entry with detailed instructions
+  - Server URL configuration
+  - Live token validation with feedback
+  - Success confirmation with next steps
+- **CLI Setup Command**: `plexiq setup` for terminal-based configuration
+  - Interactive prompts with rich formatting
+  - Browser launch for Plex login
+  - Token validation before saving
+  - Dry-run mode by default (use --execute to save)
+  - Force reinstall option (--force)
+  - Validate-only mode (--validate-only)
+- **Automatic Startup Checks**: Both CLI and GUI check for valid token on launch
+  - Graceful prompts if token missing
+  - Automatic setup wizard trigger in GUI
+  - Clear instructions for CLI users
+- **Secure Token Storage**: Enhanced security for token management
+  - Stored in `~/.plexiq/config.json`
+  - Restrictive file permissions (600 - owner read/write only)
+  - Directory permissions (700 - owner only)
+  - SHA-256 validation support
+- **Browser Widget**: Embedded web browser for seamless authentication
+  - Cookie monitoring for automatic token capture
+  - URL parsing for token extraction
+  - Fallback to system browser if PyQtWebEngine unavailable
+  - Manual token entry option
+- **Token Validation**: Lightweight API validation before storage
+  - Validates against plex.tv API
+  - Retrieves user information (username, email)
+  - Fallback to local server validation
+  - Clear error messages for invalid tokens
+- **GUI Integration**: Token configuration accessible from Tools menu
+  - "Configure Token..." menu item
+  - Reconfigure token at any time
+  - Automatic library refresh after token change
+- **CLI Integration**: Seamless token check on all commands
+  - Skips validation for setup command
+  - Clear error messages with setup instructions
+  - Supports both .env and ~/.plexiq/config.json
+
+### Enhanced
+- **Configuration System**: Updated to support optional token requirement
+  - New `require_token` parameter in Config class
+  - `has_valid_token()` method for checking token presence
+  - Backward compatible with existing .env files
+- **GUI About Dialog**: Updated to reflect v3.1 features
+- **CLI Help Text**: Updated with setup command and examples
+- **README**: Updated with v3.1 quick start guide
+
+### Technical Details
+- **New Dependencies**:
+  - PyQt6-WebEngine>=6.6.0 for browser-based token capture
+- **New Modules**:
+  - `plexiq/token_installer.py`: Core token installation logic
+  - `plexiq/commands/setup.py`: CLI setup command
+  - `plexiq/gui/setup_wizard.py`: Multi-step setup wizard
+  - `plexiq/gui/components/browser_widget.py`: Browser widget for token capture
+- **Modified Modules**:
+  - `plexiq/config.py`: Added optional token validation
+  - `plexiq/cli.py`: Added startup token check and setup command
+  - `plexiq/gui/main_window.py`: Added startup wizard and Tools menu item
+  - `requirements.txt`: Added PyQtWebEngine dependency
+
+### Security
+- Token stored with secure file permissions (600)
+- Config directory protected (700)
+- Tokens never exposed in logs or error messages
+- Validation before storage
+- Support for both manual and automated token retrieval
+
+---
+
 ## [2.x.x] - Previous Versions
 - Legacy versions (functionality preserved in v3 rewrite)
 
@@ -113,7 +191,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Future Roadmap
 
-### [3.1.0] - Planned
+### [3.2.0] - Planned
 - TV show support with episode-level analysis
 - Duplicate detection and resolution
 - Enhanced quality metrics (codec efficiency, bitrate)

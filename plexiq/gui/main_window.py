@@ -98,6 +98,9 @@ class PlexIQMainWindow(QMainWindow):
         # Initialize UI
         self._init_ui()
         self._setup_connections()
+
+        # Check for valid token before loading libraries (v3.1)
+        self._check_token_and_setup()
         self._load_libraries()
 
     def _init_ui(self):
@@ -164,6 +167,12 @@ class PlexIQMainWindow(QMainWindow):
 
         # Tools menu
         tools_menu = menubar.addMenu("&Tools")
+
+        setup_action = QAction("&Configure Token...", self)
+        setup_action.triggered.connect(self._run_setup_wizard)
+        tools_menu.addAction(setup_action)
+
+        tools_menu.addSeparator()
 
         validate_action = QAction("&Validate Configuration", self)
         validate_action.triggered.connect(self._validate_config)
@@ -519,12 +528,102 @@ class PlexIQMainWindow(QMainWindow):
             # Implement restore logic
             QMessageBox.information(self, "Restore", f"Restoring {filename} (not yet implemented)")
 
+    def _check_token_and_setup(self):
+        """
+        Check for valid Plex token and launch setup wizard if needed (v3.1).
+        Implements startup check for guided token installation.
+        """
+        from plexiq.token_installer import TokenInstaller
+        from plexiq.gui.setup_wizard import run_setup_wizard
+
+        installer = TokenInstaller()
+
+        # Check for existing valid token
+        has_token_in_file, message = installer.check_existing_token()
+        has_token_in_config = self.config.has_valid_token() if hasattr(self.config, 'has_valid_token') else False
+
+        if not has_token_in_file and not has_token_in_config:
+            # No valid token - show setup wizard
+            reply = QMessageBox.question(
+                self,
+                "Setup Required",
+                "PlexIQ needs your Plex authentication token to access your library.\n\n"
+                "Would you like to run the setup wizard now?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+
+            if reply == QMessageBox.StandardButton.Yes:
+                # Run setup wizard (non-dry-run mode for GUI)
+                token = run_setup_wizard(dry_run=False, parent=self)
+
+                if token:
+                    # Token installed successfully - reload config
+                    QMessageBox.information(
+                        self,
+                        "Setup Complete",
+                        "✅ Token installed successfully!\n\n"
+                        "PlexIQ is now ready to use."
+                    )
+                    # Update config to use new token
+                    self.config.set('plex.token', token)
+                else:
+                    # User cancelled setup
+                    QMessageBox.warning(
+                        self,
+                        "Setup Cancelled",
+                        "⚠️ PlexIQ cannot function without a valid token.\n\n"
+                        "You can run the setup wizard later from:\n"
+                        "Tools → Configure Token"
+                    )
+            else:
+                # User declined setup
+                QMessageBox.warning(
+                    self,
+                    "Token Required",
+                    "⚠️ PlexIQ cannot function without a valid token.\n\n"
+                    "You can run the setup wizard later from:\n"
+                    "Tools → Configure Token\n\n"
+                    "Or use the CLI: plexiq setup --execute"
+                )
+
+    def _run_setup_wizard(self):
+        """
+        Manually run the setup wizard from Tools menu (v3.1).
+        Allows user to reconfigure token at any time.
+        """
+        from plexiq.gui.setup_wizard import run_setup_wizard
+
+        # Run setup wizard (non-dry-run mode for GUI)
+        token = run_setup_wizard(dry_run=False, parent=self)
+
+        if token:
+            # Token installed successfully
+            QMessageBox.information(
+                self,
+                "Setup Complete",
+                "✅ Token configured successfully!\n\n"
+                "PlexIQ will now use the new token."
+            )
+            # Update config to use new token
+            self.config.set('plex.token', token)
+            # Reload libraries with new token
+            self._load_libraries()
+        else:
+            # User cancelled
+            QMessageBox.information(
+                self,
+                "Setup Cancelled",
+                "Token configuration cancelled.\n"
+                "Current token (if any) remains unchanged."
+            )
+
     def _show_about(self):
         """Show about dialog."""
         QMessageBox.about(
             self,
-            "About PlexIQ v3",
-            "PlexIQ v3 - Smart Plex Media Library Management\n\n"
+            "About PlexIQ v3.1",
+            "PlexIQ v3.1 - Smart Plex Media Library Management\n\n"
             "Author: Rich Knowles\n"
             "Safety-first design with dry-run defaults\n\n"
             "Rules:\n"
@@ -532,5 +631,8 @@ class PlexIQMainWindow(QMainWindow):
             "2. CLI/GUI Parity\n"
             "3. Clarity & Feedback\n"
             "4. Consistency & Predictability\n"
-            "5. Aesthetic & Delight"
+            "5. Aesthetic & Delight\n\n"
+            "v3.1 Features:\n"
+            "• Guided token installer\n"
+            "• Enhanced security"
         )

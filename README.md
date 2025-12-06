@@ -1,8 +1,15 @@
-# PlexIQ v3 🎬
+# PlexIQ v3.1 🎬
 
 **Smart Plex Media Library Management with Safety-First Design**
 
 PlexIQ is an intelligent media library management tool for Plex that helps you analyze, organize, and optimize your media collection. Built with a safety-first philosophy, PlexIQ defaults to dry-run mode for all destructive operations and provides detailed analysis before any action.
+
+## 🆕 What's New in v3.1
+
+- **Guided Token Installer** - Interactive setup wizard for easy Plex authentication
+- **Browser-Based Token Capture** - Automatic token retrieval from Plex login
+- **Enhanced Security** - Secure token storage with restricted file permissions
+- **Startup Validation** - Automatic token check with setup prompts if missing
 
 ---
 
@@ -30,7 +37,7 @@ PlexIQ is an intelligent media library management tool for Plex that helps you a
 ### Prerequisites
 - Python 3.8 or higher
 - Plex Media Server with API access
-- Plex authentication token ([How to find your token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/))
+- Plex account credentials (token will be configured via setup wizard)
 
 ### Installation
 
@@ -44,13 +51,33 @@ cd PlexIQ
 
 # Activate virtual environment
 source venv/bin/activate
+```
 
-# Configure your environment
+### First Run - Setup Wizard (v3.1)
+
+PlexIQ v3.1 includes a guided setup wizard for easy token configuration:
+
+```bash
+# Run the interactive setup wizard
+plexiq setup --execute
+
+# The wizard will guide you through:
+# 1. Browser-based token retrieval (automatic)
+# 2. Manual token entry (with instructions)
+# 3. Token validation
+# 4. Secure storage in ~/.plexiq/config.json
+```
+
+**Alternative: Manual Configuration**
+
+If you prefer manual configuration, create a `.env` file:
+
+```bash
 cp .env.example .env
 nano .env  # Set your PLEX_TOKEN and other settings
 ```
 
-### First Run
+### Usage Examples
 
 ```bash
 # Validate your configuration
@@ -65,7 +92,7 @@ plexiq analyze Movies --show-recommended
 # Perform a dry-run deletion
 plexiq delete Movies --dry-run
 
-# Launch the GUI
+# Launch the GUI (includes built-in setup wizard)
 plexiq gui
 ```
 
