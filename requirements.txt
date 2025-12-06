@@ -1,0 +1,34 @@
+# PlexIQ v3 Dependencies
+# Core Python libraries
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# CLI interface
+rich>=13.7.0
+click>=8.1.7
+
+# GUI interface
+PyQt6>=6.6.0
+PyQt6-Qt6>=6.6.0
+
+# Metadata sources
+plexapi>=4.15.0
+tmdbsimple>=2.9.1
+cinemagoer>=2023.5.1  # IMDb data
+
+# Data handling
+pandas>=2.1.0
+jsonschema>=4.20.0
+
+# Utilities
+colorama>=0.4.6
+tqdm>=4.66.0
+python-dateutil>=2.8.2
+
+# Development dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-qt>=4.2.0
+black>=23.11.0
+flake8>=6.1.0
+mypy>=1.7.0
