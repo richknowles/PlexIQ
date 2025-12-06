@@ -29,11 +29,12 @@ class PlexIQCLI(click.MultiCommand):
         """List all available commands."""
         commands = [
             'analyze',
-            'collect',
-            'delete',
             'backup',
+            'collect',
             'config',
+            'delete',
             'gui',
+            'setup',
         ]
         return sorted(commands)
 
@@ -58,6 +59,9 @@ class PlexIQCLI(click.MultiCommand):
             elif name == 'gui':
                 from plexiq.commands.gui_cmd import gui
                 return gui
+            elif name == 'setup':
+                from plexiq.commands.setup import setup
+                return setup
         except ImportError as e:
             console.print(f"[red]Error loading command '{name}': {e}[/red]")
             return None
@@ -79,11 +83,12 @@ class PlexIQCLI(click.MultiCommand):
 @click.pass_context
 def cli(ctx, config_file, log_level):
     """
-    PlexIQ v3 - Smart Plex Media Library Management
+    PlexIQ v3.1 - Smart Plex Media Library Management
 
     A safety-first tool for analyzing and managing your Plex media library.
 
     Commands:
+      setup     - Configure Plex authentication (run this first!)
       collect   - Collect metadata from Plex library
       analyze   - Analyze items and compute deletion scores
       delete    - Delete items (dry-run by default)
@@ -92,6 +97,7 @@ def cli(ctx, config_file, log_level):
       gui       - Launch GUI interface
 
     Examples:
+      plexiq setup                    # First-time setup
       plexiq collect Movies --enrich
       plexiq analyze Movies --show-recommended
       plexiq delete Movies --dry-run
@@ -106,9 +112,33 @@ def cli(ctx, config_file, log_level):
     # Ensure we have a context object
     ctx.ensure_object(dict)
 
+    # Check if the command being run is 'setup'
+    is_setup_command = ctx.invoked_subcommand == 'setup'
+
     try:
-        # Load configuration
-        config = get_config(config_file)
+        # Load configuration (don't require token for setup command)
+        config = get_config(config_file, require_token=not is_setup_command)
+
+        # Check for token if not running setup command
+        if not is_setup_command:
+            # Try to load token from ~/.plexiq/config.json first
+            from plexiq.token_installer import TokenInstaller
+            installer = TokenInstaller()
+            has_token_in_file, _ = installer.check_existing_token()
+
+            # Check if token exists in config or file
+            has_token = config.has_valid_token() if hasattr(config, 'has_valid_token') else False
+
+            if not has_token and not has_token_in_file:
+                console.print(Panel(
+                    "[yellow]⚠️  No Plex token configured![/yellow]\n\n"
+                    "PlexIQ needs your Plex authentication token to access your library.\n\n"
+                    "Run: [cyan]plexiq setup --execute[/cyan] to configure your token.",
+                    title="Setup Required",
+                    border_style="yellow"
+                ))
+                console.print("\n[dim]Tip: The setup wizard will guide you through the process.[/dim]\n")
+                sys.exit(1)
 
         # Override log level if specified
         if log_level:
@@ -122,12 +152,23 @@ def cli(ctx, config_file, log_level):
         ctx.obj['logger'] = logger
 
     except ValueError as e:
-        console.print(Panel(
-            f"[red]Configuration Error:[/red]\n{e}\n\n"
-            "Please check your .env file. See .env.example for reference.",
-            title="PlexIQ Configuration Error",
-            border_style="red"
-        ))
+        # Check if this is the token error
+        if "PLEX_TOKEN not set" in str(e):
+            console.print(Panel(
+                "[yellow]⚠️  No Plex token configured![/yellow]\n\n"
+                "PlexIQ needs your Plex authentication token to access your library.\n\n"
+                "Run: [cyan]plexiq setup --execute[/cyan] to configure your token.",
+                title="Setup Required",
+                border_style="yellow"
+            ))
+            console.print("\n[dim]Tip: The setup wizard will guide you through the process.[/dim]\n")
+        else:
+            console.print(Panel(
+                f"[red]Configuration Error:[/red]\n{e}\n\n"
+                "Please check your .env file. See .env.example for reference.",
+                title="PlexIQ Configuration Error",
+                border_style="red"
+            ))
         sys.exit(1)
     except Exception as e:
         console.print(f"[red]Initialization Error: {e}[/red]")
