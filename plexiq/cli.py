@@ -35,6 +35,7 @@ class PlexIQCLI(click.MultiCommand):
             'delete',
             'gui',
             'setup',
+            'web',
         ]
         return sorted(commands)
 
@@ -62,6 +63,9 @@ class PlexIQCLI(click.MultiCommand):
             elif name == 'setup':
                 from plexiq.commands.setup import setup
                 return setup
+            elif name == 'web':
+                from plexiq.commands.web_cmd import web
+                return web
         except ImportError as e:
             console.print(f"[red]Error loading command '{name}': {e}[/red]")
             return None
@@ -83,7 +87,7 @@ class PlexIQCLI(click.MultiCommand):
 @click.pass_context
 def cli(ctx, config_file, log_level):
     """
-    PlexIQ v3.1 - Smart Plex Media Library Management
+    PlexIQ v3.2 - Smart Plex Media Library Management
 
     A safety-first tool for analyzing and managing your Plex media library.
 
@@ -95,13 +99,15 @@ def cli(ctx, config_file, log_level):
       backup    - Manage backups and operation records
       config    - View and validate configuration
       gui       - Launch GUI interface
+      web       - Launch web interface
 
     Examples:
       plexiq setup                    # First-time setup
       plexiq collect Movies --enrich
       plexiq analyze Movies --show-recommended
       plexiq delete Movies --dry-run
-      plexiq gui
+      plexiq gui                       # Desktop GUI
+      plexiq web                       # Web interface
 
     Safety Features (Rule #1):
       • All destructive operations default to --dry-run
@@ -112,15 +118,16 @@ def cli(ctx, config_file, log_level):
     # Ensure we have a context object
     ctx.ensure_object(dict)
 
-    # Check if the command being run is 'setup'
+    # Check if the command being run is 'setup' or 'web'
     is_setup_command = ctx.invoked_subcommand == 'setup'
+    is_web_command = ctx.invoked_subcommand == 'web'
 
     try:
-        # Load configuration (don't require token for setup command)
-        config = get_config(config_file, require_token=not is_setup_command)
+        # Load configuration (don't require token for setup/web commands)
+        config = get_config(config_file, require_token=not (is_setup_command or is_web_command))
 
-        # Check for token if not running setup command
-        if not is_setup_command:
+        # Check for token if not running setup/web command
+        if not is_setup_command and not is_web_command:
             # Try to load token from ~/.plexiq/config.json first
             from plexiq.token_installer import TokenInstaller
             installer = TokenInstaller()
