@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  plexiq:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: plexiq:3.2.0
+    container_name: plexiq
+    restart: unless-stopped
+
+    # Ports - Web interface on 8080
+    ports:
+      - "8080:8080"
+
+    # Environment variables (override with .env file)
+    environment:
+      - PLEX_URL=${PLEX_URL:-http://10.0.0.10:32400}
+      - PLEX_TOKEN=${PLEX_TOKEN:-GifXg9g3Ao4LcRbpCzwZ}
+      - TMDB_API_KEY=${TMDB_API_KEY:-a4af4f20738fafa880491ff093b98b5}
+      - OMDB_API_KEY=${OMDB_API_KEY:-27d1a548}
+      - WEIGHT_PLAY_COUNT=${WEIGHT_PLAY_COUNT:-0.3}
+      - WEIGHT_RATINGS=${WEIGHT_RATINGS:-0.25}
+      - WEIGHT_SIZE=${WEIGHT_SIZE:-0.2}
+      - WEIGHT_AGE=${WEIGHT_AGE:-0.15}
+      - WEIGHT_QUALITY=${WEIGHT_QUALITY:-0.1}
+      - MIN_DELETION_SCORE=${MIN_DELETION_SCORE:-0.7}
+      - NEVER_DELETE_RATING_THRESHOLD=${NEVER_DELETE_RATING_THRESHOLD:-8.0}
+      - DATA_DIR=/app/data
+      - BACKUP_DIR=/app/data/backups
+      - LOG_DIR=/app/data/logs
+      - CACHE_DIR=/app/data/cache
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DRY_RUN_DEFAULT=${DRY_RUN_DEFAULT:-false}
+
+    # Volumes for persistent data
+    volumes:
+      - plexiq-data:/app/data
+      # Mount .env file for configuration
+      - ./.env:/app/.env:ro
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Start web server
+    command: ["uvicorn", "plexiq.web.app:app", "--host", "0.0.0.0", "--port", "8080"]
+
+volumes:
+  plexiq-data:
+    driver: local
