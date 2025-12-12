@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="x" alt="PlexIQ-Banner-RK" width="1080"/>
+<img src="https://github.com/richknowles/PlexIQ/blob/7ead257a83edb6fc7ce38e2d5a2a2ce9fb237e20/PlexIQ-Banner-RK.png" alt="PlexIQ-Banner-RK" width="1080"/>
 </p>
 
 <h1 align="center">🎬 PlexIQ v3.21 🎬</h1>
