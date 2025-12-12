@@ -289,51 +289,142 @@ class PlexIQMainWindow(QMainWindow):
         pass
 
     def _apply_theme(self):
-        """Apply application theme (Rule #5: Aesthetic)."""
+        """Apply ProxMenuX-inspired theme (dark gradient, modern, minimalist)."""
         theme = self.config.get('gui.theme', 'dark')
 
         if theme == 'dark':
+            # ProxMenuX-style: gray-900 (#111827) to gray-800 (#1f2937) gradient
             self.setStyleSheet("""
                 QMainWindow {
-                    background-color: #2b2b2b;
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #111827, stop:1 #1f2937);
+                    color: #ffffff;
+                }
+                QWidget {
+                    background: transparent;
                     color: #ffffff;
                 }
                 QGroupBox {
-                    border: 1px solid #555;
-                    border-radius: 5px;
-                    margin-top: 10px;
-                    padding: 10px;
+                    background-color: rgba(31, 41, 55, 0.5);
+                    border: 2px solid #374151;
+                    border-radius: 8px;
+                    margin-top: 12px;
+                    padding: 16px;
                     font-weight: bold;
+                    font-size: 14px;
                 }
                 QGroupBox::title {
                     subcontrol-origin: margin;
-                    padding: 0 5px;
+                    subcontrol-position: top left;
+                    padding: 4px 8px;
+                    color: #F4A940;
                 }
                 QPushButton {
-                    background-color: #3a3a3a;
-                    color: white;
-                    border: 1px solid #555;
-                    padding: 8px 16px;
-                    border-radius: 4px;
+                    background-color: #374151;
+                    color: #ffffff;
+                    border: 1px solid #4B5563;
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    font-size: 13px;
                 }
                 QPushButton:hover {
-                    background-color: #4a4a4a;
+                    background-color: #4B5563;
+                    border-color: #F4A940;
+                }
+                QPushButton:pressed {
+                    background-color: #1f2937;
                 }
                 QPushButton:disabled {
-                    background-color: #2a2a2a;
-                    color: #666;
+                    background-color: #1f2937;
+                    color: #6B7280;
+                    border-color: #374151;
+                }
+                QComboBox {
+                    background-color: #374151;
+                    color: #ffffff;
+                    border: 1px solid #4B5563;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    min-width: 200px;
+                }
+                QComboBox:hover {
+                    border-color: #F4A940;
+                }
+                QComboBox::drop-down {
+                    border: none;
+                    padding-right: 8px;
+                }
+                QComboBox QAbstractItemView {
+                    background-color: #374151;
+                    color: #ffffff;
+                    selection-background-color: #4B5563;
+                    border: 1px solid #4B5563;
                 }
                 QTableWidget {
-                    background-color: #333;
-                    alternate-background-color: #3a3a3a;
-                    color: white;
-                    gridline-color: #555;
+                    background-color: #1f2937;
+                    alternate-background-color: #374151;
+                    color: #ffffff;
+                    gridline-color: #4B5563;
+                    border: 1px solid #374151;
+                    border-radius: 6px;
+                }
+                QTableWidget::item:selected {
+                    background-color: #4B5563;
                 }
                 QHeaderView::section {
-                    background-color: #2b2b2b;
-                    color: white;
-                    padding: 5px;
-                    border: 1px solid #555;
+                    background-color: #111827;
+                    color: #F4A940;
+                    padding: 8px;
+                    border: none;
+                    border-bottom: 2px solid #F4A940;
+                    font-weight: bold;
+                }
+                QTabWidget::pane {
+                    border: 1px solid #374151;
+                    background-color: transparent;
+                    border-radius: 6px;
+                }
+                QTabBar::tab {
+                    background-color: #374151;
+                    color: #9CA3AF;
+                    padding: 10px 20px;
+                    margin-right: 4px;
+                    border-top-left-radius: 6px;
+                    border-top-right-radius: 6px;
+                }
+                QTabBar::tab:selected {
+                    background-color: #1f2937;
+                    color: #F4A940;
+                    font-weight: bold;
+                }
+                QTabBar::tab:hover {
+                    background-color: #4B5563;
+                    color: #ffffff;
+                }
+                QStatusBar {
+                    background-color: #111827;
+                    color: #9CA3AF;
+                    border-top: 1px solid #374151;
+                }
+                QLabel {
+                    color: #E5E7EB;
+                }
+                QMenuBar {
+                    background-color: #111827;
+                    color: #ffffff;
+                    border-bottom: 1px solid #374151;
+                }
+                QMenuBar::item:selected {
+                    background-color: #374151;
+                }
+                QMenu {
+                    background-color: #1f2937;
+                    color: #ffffff;
+                    border: 1px solid #374151;
+                }
+                QMenu::item:selected {
+                    background-color: #374151;
                 }
             """)
 
