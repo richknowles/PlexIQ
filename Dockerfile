@@ -96,7 +96,7 @@ RUN useradd -m -u 1000 plexiq && \
 USER plexiq
 
 # Set environment variables with defaults
-ENV PLEX_URL=http://10.0.0.10:32400 \
+ENV PLEX_URL=http://localhost:32400 \
     DATA_DIR=/app/data \
     BACKUP_DIR=/app/data/backups \
     LOG_DIR=/app/data/logs \
