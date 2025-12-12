@@ -22,7 +22,7 @@ if requirements_file.exists():
 
 setup(
     name='plexiq',
-    version='3.0.0',
+    version='3.2.0',
     author='Rich Knowles',
     author_email='',
     description='Smart Plex Media Library Management with Safety-First Design',
