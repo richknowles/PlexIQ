@@ -14,11 +14,13 @@ services:
       - "8080:8080"
 
     # Environment variables (override with .env file)
+    # NOTE: Sensitive credentials (PLEX_TOKEN, TMDB_API_KEY, OMDB_API_KEY) must be set via .env file
+    # Never commit credentials to version control!
     environment:
-      - PLEX_URL=${PLEX_URL:-http://10.0.0.10:32400}
-      - PLEX_TOKEN=${PLEX_TOKEN:-GifXg9g3Ao4LcRbpCzwZ}
-      - TMDB_API_KEY=${TMDB_API_KEY:-a4af4f20738fafa880491ff093b98b5}
-      - OMDB_API_KEY=${OMDB_API_KEY:-27d1a548}
+      - PLEX_URL=${PLEX_URL:-http://localhost:32400}
+      - PLEX_TOKEN=${PLEX_TOKEN:-}
+      - TMDB_API_KEY=${TMDB_API_KEY:-}
+      - OMDB_API_KEY=${OMDB_API_KEY:-}
       - WEIGHT_PLAY_COUNT=${WEIGHT_PLAY_COUNT:-0.3}
       - WEIGHT_RATINGS=${WEIGHT_RATINGS:-0.25}
       - WEIGHT_SIZE=${WEIGHT_SIZE:-0.2}
@@ -36,8 +38,11 @@ services:
     # Volumes for persistent data
     volumes:
       - plexiq-data:/app/data
-      # Mount .env file for configuration
-      - ./.env:/app/.env:ro
+      # NOTE: .env file is NOT mounted into container to avoid mount failures if file doesn't exist
+      # Environment variables are passed via the 'environment:' section above
+      # Docker Compose automatically reads .env file from project root for variable substitution
+      # The application uses load_dotenv() which reads from environment variables (already set above)
+      # If you need .env inside container, create it first: cp .env.example .env
 
     # Health check
     healthcheck:
