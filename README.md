@@ -1,4 +1,4 @@
-# PlexIQ v3.1 🎬
+# PlexIQ v3.21 🎬
 
 **Smart Plex Media Library Management with Safety-First Design**
 
