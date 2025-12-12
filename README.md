@@ -1,4 +1,9 @@
-# PlexIQ v3.21 🎬
+<p align="center">
+  <img src="https://github.com/richknowles/PlexIQ/blob/f33853bd5d010ffd67724f644437833847a46cb5/PlexIQ-Banner-RK.png" alt="PlexIQ-Banner-RK" width="200"/>
+</p>
+
+<h1 align="center">🎬 PlexIQ v3.21 🎬</h1>
+# 
 
 **Smart Plex Media Library Management with Safety-First Design**
 
