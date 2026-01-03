@@ -4,7 +4,9 @@
 
 ### 1. Build the Image
 
-docker-compose build### 2. Configure Environment Variables
+docker-compose build
+
+### 2. Configure Environment Variables
 
 Your `.env` file is already configured with your API keys and settings.
 
