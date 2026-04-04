@@ -19,7 +19,7 @@ from plexiq.logger import get_logger, reset_logger
 console = Console()
 
 
-class PlexIQCLI(click.MultiCommand):
+class PlexIQCLI(click.Group):
     """
     Custom CLI class that auto-discovers commands from commands/ directory.
     Implements command registry for CLI/GUI parity (Rule #2).

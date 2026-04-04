@@ -26,7 +26,9 @@ class Config:
             require_token: Whether to require Plex token (False for setup mode)
         """
         if env_file:
-            load_dotenv(env_file)
+            # override=True ensures the explicit file takes precedence over any
+            # existing env vars (important for test isolation)
+            load_dotenv(env_file, override=True)
         else:
             # Try to find .env in current directory or parent directories
             load_dotenv()
@@ -79,12 +81,12 @@ class Config:
                 'animation_duration_ms': int(os.getenv('ANIMATION_DURATION_MS', '200')),
             },
 
-            # Directories
+            # Directories (subdirs default to DATA_DIR/<name> if not set)
             'dirs': {
-                'data': Path(os.getenv('DATA_DIR', './data')),
-                'backup': Path(os.getenv('BACKUP_DIR', './data/backups')),
-                'log': Path(os.getenv('LOG_DIR', './data/logs')),
-                'cache': Path(os.getenv('CACHE_DIR', './data/cache')),
+                'data': Path(_data_dir := os.getenv('DATA_DIR', './data')),
+                'backup': Path(os.getenv('BACKUP_DIR', f'{_data_dir}/backups')),
+                'log': Path(os.getenv('LOG_DIR', f'{_data_dir}/logs')),
+                'cache': Path(os.getenv('CACHE_DIR', f'{_data_dir}/cache')),
             }
         }
 

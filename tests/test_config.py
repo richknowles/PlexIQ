@@ -13,8 +13,10 @@ class TestConfig:
     """Test configuration management."""
 
     def setup_method(self):
-        """Reset config before each test."""
+        """Reset config and env vars before each test."""
         reset_config()
+        # Clear token from env so tests don't bleed into each other
+        os.environ.pop('PLEX_TOKEN', None)
 
     def test_config_loads_defaults(self, tmp_path):
         """Test that config loads with safe defaults."""
