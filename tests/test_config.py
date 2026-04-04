@@ -13,10 +13,18 @@ class TestConfig:
     """Test configuration management."""
 
     def setup_method(self):
-        """Reset config and env vars before each test."""
+        """Reset config, logger globals, and env vars before each test."""
+        from plexiq.logger import reset_logger
         reset_config()
-        # Clear token from env so tests don't bleed into each other
-        os.environ.pop('PLEX_TOKEN', None)
+        reset_logger()
+        # Clear all PlexIQ env vars so project .env doesn't pollute tests
+        for key in [
+            'PLEX_TOKEN', 'PLEX_URL',
+            'DRY_RUN_DEFAULT', 'LOG_LEVEL',
+            'DATA_DIR', 'BACKUP_DIR', 'LOG_DIR', 'CACHE_DIR',
+            'TMDB_API_KEY', 'OMDB_API_KEY',
+        ]:
+            os.environ.pop(key, None)
 
     def test_config_loads_defaults(self, tmp_path):
         """Test that config loads with safe defaults."""

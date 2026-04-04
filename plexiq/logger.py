@@ -32,7 +32,8 @@ class PlexIQLogger:
             name: Logger name
             config: Config instance (uses global if not provided)
         """
-        self.config = config or get_config()
+        # Loggers don't need a Plex token — use require_token=False
+        self.config = config or get_config(require_token=False)
         self.logger = logging.getLogger(name)
         self.console = Console()
 

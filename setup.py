@@ -10,15 +10,22 @@ from pathlib import Path
 readme_file = Path(__file__).parent / "README.md"
 long_description = readme_file.read_text(encoding='utf-8') if readme_file.exists() else ""
 
-# Read requirements
+# Core requirements (no GUI)
+GUI_PACKAGES = {'PyQt6', 'PyQt6-Qt6', 'PyQt6-WebEngine'}
+
 requirements_file = Path(__file__).parent / "requirements.txt"
-requirements = []
+core_requirements = []
+gui_requirements = []
 if requirements_file.exists():
-    requirements = [
-        line.strip()
-        for line in requirements_file.read_text(encoding='utf-8').splitlines()
-        if line.strip() and not line.startswith('#')
-    ]
+    for line in requirements_file.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        pkg_name = line.split('>=')[0].split('==')[0].split('[')[0].strip()
+        if pkg_name in GUI_PACKAGES:
+            gui_requirements.append(line)
+        else:
+            core_requirements.append(line)
 
 setup(
     name='plexiq',
@@ -43,7 +50,10 @@ setup(
         'Programming Language :: Python :: 3.12',
     ],
     python_requires='>=3.8',
-    install_requires=requirements,
+    install_requires=core_requirements,
+    extras_require={
+        'gui': gui_requirements,
+    },
     entry_points={
         'console_scripts': [
             'plexiq=plexiq.cli:main',
