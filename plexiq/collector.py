@@ -137,9 +137,9 @@ class MetadataCollector:
 
             # Plex-specific data
             'plex': {
-                'added_at': item.addedAt.isoformat() if hasattr(item, 'addedAt') else None,
-                'updated_at': item.updatedAt.isoformat() if hasattr(item, 'updatedAt') else None,
-                'last_viewed_at': item.lastViewedAt.isoformat() if hasattr(item, 'lastViewedAt') else None,
+                'added_at': item.addedAt.isoformat() if getattr(item, 'addedAt', None) else None,
+                'updated_at': item.updatedAt.isoformat() if getattr(item, 'updatedAt', None) else None,
+                'last_viewed_at': item.lastViewedAt.isoformat() if getattr(item, 'lastViewedAt', None) else None,
                 'view_count': getattr(item, 'viewCount', 0),
                 'rating': getattr(item, 'rating', None),
                 'audience_rating': getattr(item, 'audienceRating', None),

@@ -243,8 +243,8 @@ class MediaAnalyzer:
     def _score_quality(self, item: Dict[str, Any]) -> Tuple[float, str]:
         """Score based on media quality (lower quality = higher deletion score)."""
         media = item.get('media', {})
-        resolution = media.get('resolution', '').lower()
-        codec = media.get('video_codec', '').lower()
+        resolution = (media.get('resolution') or '').lower()
+        codec = (media.get('video_codec') or '').lower()
 
         # Resolution scoring
         if 'sd' in resolution or '480' in resolution:
@@ -297,11 +297,12 @@ class MediaAnalyzer:
 
         # Never delete highly rated content
         ratings = item.get('ratings', {})
+        rt = ratings.get('rotten_tomatoes')
         available_ratings = [
             r for r in [
                 ratings.get('imdb'),
                 ratings.get('tmdb'),
-                ratings.get('rotten_tomatoes', 0) / 10.0
+                rt / 10.0 if rt is not None else None,
             ] if r is not None
         ]
 

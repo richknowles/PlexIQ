@@ -101,21 +101,19 @@ class TokenInstaller:
                 email = user_data.get('email', 'Unknown')
                 return True, f"Valid token for user: {username} ({email})"
 
-            elif response.status_code == 401:
-                return False, "Token is invalid or expired"
-            else:
-                return False, f"Validation failed with status {response.status_code}"
+            # plex.tv rejected token — fall through to local server check
+        except requests.RequestException:
+            pass  # plex.tv unreachable — fall through to local server check
 
-        except requests.RequestException as e:
-            # If plex.tv is unreachable, try local server if URL provided
-            if plex_url:
-                try:
-                    server = PlexServer(plex_url, token)
-                    return True, f"Valid token for server: {server.friendlyName}"
-                except Exception as server_error:
-                    return False, f"Token validation failed: {server_error}"
+        # Method 2: Validate directly against local Plex server
+        if plex_url:
+            try:
+                server = PlexServer(plex_url, token)
+                return True, f"Valid token for server: {server.friendlyName}"
+            except Exception as server_error:
+                return False, f"Token validation failed: {server_error}"
 
-            return False, f"Network error during validation: {e}"
+        return False, "Token rejected by plex.tv — re-run with your server URL"
 
     def extract_token_from_url(self, url: str) -> Optional[str]:
         """

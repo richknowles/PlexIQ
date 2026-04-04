@@ -312,12 +312,19 @@ def _manual_token_installation(installer: TokenInstaller) -> bool:
         True if successful
     """
     console.print("\n[cyan]🔑 Manual Token Installation[/cyan]\n")
-    console.print("Enter your Plex authentication token.")
     console.print("Type 'help' for retrieval instructions or 'cancel' to quit.\n")
+
+    # Ask for server URL upfront so local validation works as fallback
+    console.print("[bold]Step 1:[/bold] Enter your Plex server address (e.g. http://192.168.1.10:32400)")
+    plex_url = Prompt.ask(
+        "Plex server URL",
+        default="http://localhost:32400"
+    )
+    console.print("\n[bold]Step 2:[/bold] Enter your Plex token (20-char string from Preferences.xml)")
 
     max_attempts = 3
     for attempt in range(1, max_attempts + 1):
-        console.print(f"[cyan]Attempt {attempt}/{max_attempts}[/cyan]")
+        console.print(f"\n[cyan]Attempt {attempt}/{max_attempts}[/cyan]")
 
         token = Prompt.ask("Plex token").strip()
 
@@ -333,19 +340,12 @@ def _manual_token_installation(installer: TokenInstaller) -> bool:
             console.print("[red]❌ Token cannot be empty[/red]")
             continue
 
-        # Validate token
+        # Validate against plex.tv first, then fall back to local server
         console.print("\n[cyan]🔍 Validating token...[/cyan]")
-        is_valid, message = installer.validate_token(token)
+        is_valid, message = installer.validate_token(token, plex_url=plex_url)
 
         if is_valid:
             console.print(f"[green]✅ {message}[/green]\n")
-
-            # Get Plex server URL
-            default_url = "http://localhost:32400"
-            plex_url = Prompt.ask(
-                "Enter your Plex server URL",
-                default=default_url
-            )
 
             # Save token
             success, save_message = installer.save_token(
