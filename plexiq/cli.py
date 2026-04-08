@@ -35,6 +35,7 @@ class PlexIQCLI(click.Group):
             'delete',
             'gui',
             'setup',
+            'untouchables',
             'web',
         ]
         return sorted(commands)
@@ -66,6 +67,9 @@ class PlexIQCLI(click.Group):
             elif name == 'web':
                 from plexiq.commands.web_cmd import web
                 return web
+            elif name == 'untouchables':
+                from plexiq.commands.untouchables import untouchables_group
+                return untouchables_group
         except ImportError as e:
             console.print(f"[red]Error loading command '{name}': {e}[/red]")
             return None
@@ -96,6 +100,7 @@ def cli(ctx, config_file, log_level):
       collect   - Collect metadata from Plex library
       analyze   - Analyze items and compute deletion scores
       delete    - Delete items (dry-run by default)
+      untouchables - Manage protected movies (add/remove/list)
       backup    - Manage backups and operation records
       config    - View and validate configuration
       gui       - Launch GUI interface
@@ -105,6 +110,8 @@ def cli(ctx, config_file, log_level):
       plexiq setup                    # First-time setup
       plexiq collect Movies --enrich
       plexiq analyze Movies --show-recommended
+      plexiq untouchables add 12345 --title "My Movie"
+      plexiq untouchables list
       plexiq delete Movies --dry-run
       plexiq gui                       # Desktop GUI
       plexiq web                       # Web interface
@@ -118,16 +125,17 @@ def cli(ctx, config_file, log_level):
     # Ensure we have a context object
     ctx.ensure_object(dict)
 
-    # Check if the command being run is 'setup' or 'web'
+    # Check if the command being run is 'setup', 'web', or 'untouchables'
     is_setup_command = ctx.invoked_subcommand == 'setup'
     is_web_command = ctx.invoked_subcommand == 'web'
+    is_untouchables_command = ctx.invoked_subcommand in ('untouchables', 'add', 'remove', 'list')
 
     try:
-        # Load configuration (don't require token for setup/web commands)
-        config = get_config(config_file, require_token=not (is_setup_command or is_web_command))
+        # Load configuration (don't require token for setup/web/untouchables commands)
+        config = get_config(config_file, require_token=not (is_setup_command or is_web_command or is_untouchables_command))
 
-        # Check for token if not running setup/web command
-        if not is_setup_command and not is_web_command:
+        # Check for token if not running setup/web/untouchables command
+        if not is_setup_command and not is_web_command and not is_untouchables_command:
             # Try to load token from ~/.plexiq/config.json first
             from plexiq.token_installer import TokenInstaller
             installer = TokenInstaller()

@@ -58,3 +58,4 @@ backups/
 cache/
 *.backup
 reports/
+data/

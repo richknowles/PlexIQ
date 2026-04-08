@@ -15,6 +15,7 @@ class AnalysisTableWidget(QTableWidget):
     Custom table widget for displaying PlexIQ analysis results.
     Features:
     - Color-coded deletion scores
+    - Lock icon for protected (untouchable) movies
     - Right-click context menu (<100ms response, Rule #4)
     - Sortable columns
     - Detailed rationale tooltips
@@ -24,7 +25,7 @@ class AnalysisTableWidget(QTableWidget):
         super().__init__(parent)
 
         # Table configuration
-        self.setColumnCount(8)
+        self.setColumnCount(9)
         self.setHorizontalHeaderLabels([
             "Title",
             "Year",
@@ -32,6 +33,7 @@ class AnalysisTableWidget(QTableWidget):
             "Size (GB)",
             "Views",
             "Rating",
+            "Protected",
             "Recommended",
             "Top Reason"
         ])
@@ -45,7 +47,7 @@ class AnalysisTableWidget(QTableWidget):
         # Resize columns
         header = self.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Title
-        header.setSectionResizeMode(7, QHeaderView.ResizeMode.Stretch)  # Top Reason
+        header.setSectionResizeMode(8, QHeaderView.ResizeMode.Stretch)  # Top Reason
 
         # Context menu
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -121,6 +123,16 @@ class AnalysisTableWidget(QTableWidget):
             rating_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.setItem(row, 5, rating_item)
 
+            # Protected (lock icon for untouchable movies)
+            if item.get('protected', False):
+                protected_item = QTableWidgetItem("🔒")
+                protected_item.setToolTip("Protected from deletion")
+            else:
+                protected_item = QTableWidgetItem("")
+            protected_item.setFlags(protected_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            protected_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.setItem(row, 6, protected_item)
+
             # Recommended
             recommended = "✓" if item.get('deletion_recommended', False) else ""
             rec_item = QTableWidgetItem(recommended)
@@ -128,7 +140,7 @@ class AnalysisTableWidget(QTableWidget):
             rec_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if recommended:
                 rec_item.setForeground(QColor(255, 100, 100))
-            self.setItem(row, 6, rec_item)
+            self.setItem(row, 7, rec_item)
 
             # Top reason (from rationale)
             rationale_lines = item.get('deletion_rationale', [])
@@ -145,7 +157,7 @@ class AnalysisTableWidget(QTableWidget):
             full_rationale = "\n".join(rationale_lines)
             reason_item.setToolTip(full_rationale)
 
-            self.setItem(row, 7, reason_item)
+            self.setItem(row, 8, reason_item)
 
     def _show_context_menu(self, position: QPoint):
         """
@@ -173,6 +185,22 @@ class AnalysisTableWidget(QTableWidget):
         copy_action = QAction("Copy Title", self)
         copy_action.triggered.connect(lambda: self._copy_titles(list(selected_rows)))
         menu.addAction(copy_action)
+
+        # Protect/Unprotect action
+        has_unprotected = any(
+            not self._items[row].get('protected', False)
+            for row in selected_rows
+            if row < len(self._items)
+        )
+        
+        if has_unprotected:
+            protect_action = QAction("🔒 Protect from Deletion", self)
+            protect_action.triggered.connect(lambda: self._protect_items(list(selected_rows)))
+            menu.addAction(protect_action)
+        else:
+            unprotect_action = QAction("🔓 Unprotect", self)
+            unprotect_action.triggered.connect(lambda: self._unprotect_items(list(selected_rows)))
+            menu.addAction(unprotect_action)
 
         # Export selected action
         export_action = QAction("Export Selected...", self)
@@ -262,3 +290,41 @@ Views: {item.get('plex', {}).get('view_count', 0)}
             self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         else:
             self.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+
+    def _protect_items(self, rows: List[int]):
+        """Protect selected items from deletion."""
+        from plexiq.untouchables import load_untouchables, save_untouchables
+        
+        untouchables = load_untouchables()
+        
+        for row in rows:
+            if row < len(self._items):
+                item = self._items[row]
+                rating_key = str(item.get('plex', {}).get('rating_key', ''))
+                if rating_key and not any(m['id'] == rating_key for m in untouchables):
+                    untouchables.append({
+                        'id': rating_key,
+                        'title': item.get('title', 'Unknown'),
+                        'added_at': None
+                    })
+                    item['protected'] = True
+                    item['deletion_recommended'] = False
+        
+        save_untouchables(untouchables)
+        self.setAnalysisData(self._items)
+
+    def _unprotect_items(self, rows: List[int]):
+        """Unprotect selected items."""
+        from plexiq.untouchables import load_untouchables, save_untouchables
+        
+        untouchables = load_untouchables()
+        
+        for row in rows:
+            if row < len(self._items):
+                item = self._items[row]
+                rating_key = str(item.get('plex', {}).get('rating_key', ''))
+                untouchables = [m for m in untouchables if m['id'] != rating_key]
+                item['protected'] = False
+        
+        save_untouchables(untouchables)
+        self.setAnalysisData(self._items)

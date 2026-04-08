@@ -11,6 +11,7 @@ import statistics
 
 from plexiq.config import get_config
 from plexiq.logger import get_logger
+from plexiq.untouchables import get_untouchable_ids
 
 
 class MediaAnalyzer:
@@ -49,10 +50,28 @@ class MediaAnalyzer:
         Returns:
             List of items with scores and rationale
         """
-        self.logger.info(f"Analyzing {len(items)} items...")
+        untouchable_ids = get_untouchable_ids()
+        
+        filtered_items = []
+        skipped_count = 0
+        for item in items:
+            rating_key = str(item.get('plex', {}).get('rating_key', ''))
+            if rating_key in untouchable_ids:
+                item['protected'] = True
+                item['deletion_score'] = 0.0
+                item['deletion_rationale'] = ['PROTECTED - Never recommend for deletion']
+                item['deletion_recommended'] = False
+                skipped_count += 1
+            filtered_items.append(item)
+
+        self.logger.info(f"Analyzing {len(filtered_items)} items ({skipped_count} protected)...")
 
         analyzed_items = []
-        for item in items:
+        for item in filtered_items:
+            if item.get('protected'):
+                analyzed_items.append(item)
+                continue
+                
             score, rationale = self.compute_deletion_score(item)
 
             item['deletion_score'] = score
