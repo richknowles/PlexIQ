@@ -211,35 +211,36 @@ class TokenInstaller:
             Formatted instructions for manual token retrieval
         """
         return """
-╔══════════════════════════════════════════════════════════════════╗
-║          Manual Plex Token Retrieval Instructions                ║
-╚══════════════════════════════════════════════════════════════════╝
+ ╔══════════════════════════════════════════════════════════════════╗
+ ║          Manual Plex Token Retrieval Instructions                ║
+ ╚══════════════════════════════════════════════════════════════════╝
 
-Method 1: Via Plex Web App
-───────────────────────────
-1. Open your web browser and go to: https://app.plex.tv/
-2. Sign in to your Plex account
-3. Open your browser's Developer Tools:
-   • Chrome/Edge: Press F12 or Ctrl+Shift+I (Cmd+Option+I on Mac)
-   • Firefox: Press F12 or Ctrl+Shift+I (Cmd+Option+I on Mac)
-   • Safari: Enable Developer menu, then press Cmd+Option+I
-4. Go to the "Application" or "Storage" tab
-5. Look for "Cookies" → "https://app.plex.tv"
-6. Find the cookie named "X-Plex-Token" or similar
-7. Copy the value (20+ character alphanumeric string)
+EASY METHOD - After signing in to Plex in your browser:
+─────────────────────────────────────────────
+1. Go to: https://app.plex.tv/desktop
+2. Sign in if needed
+3. Look at the URL in your browser's address bar
+4. The token is the long string after 'token=' in the URL
+5. Copy just the token part (letters and numbers only)
 
-Method 2: Via Plex XML
+ALTERNATIVE - Via Browser Developer Tools
+────────────────────────────────────
+1. While signed in to Plex, press F12 (or Ctrl+Shift+I)
+2. Click on "Application" tab (Chrome/Edge) or "Storage" (Firefox)
+3. Click "Cookies" → "https://app.plex.tv"
+4. Find and click on "X-Plex-Token" cookie
+5. Copy the value shown in the right panel
+
+ALTERNATIVE - Via Plex XML
 ──────────────────────
-1. While signed in to Plex, visit this URL in your browser:
-   https://plex.tv/pms/servers.xml
+1. Visit: https://plex.tv/pms/servers.xml
 2. Look for the "authToken" attribute in the XML
-3. Copy the token value
+3. Copy the token value between the quotes
 
-Method 3: Via PlexAPI Python (if installed)
-────────────────────────────────────────────
-1. Run: python -m plexapi.server
-2. Follow the authentication prompts
-3. Your token will be displayed
+NEED HELP? Try this:
+─────────────────
+• Visit: https://support.plex.tv/articles/ obtaining-your-plex-token/
+• Search: "how to find my Plex token" on Google
 
 ⚠️  Security Note:
    Your Plex token provides full access to your account.

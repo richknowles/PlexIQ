@@ -34,6 +34,7 @@ class PlexIQCLI(click.MultiCommand):
             'config',
             'delete',
             'gui',
+            'quickstart',
             'setup',
         ]
         return sorted(commands)
@@ -59,6 +60,9 @@ class PlexIQCLI(click.MultiCommand):
             elif name == 'gui':
                 from plexiq.commands.gui_cmd import gui
                 return gui
+            elif name == 'quickstart':
+                from plexiq.commands.quickstart import quickstart
+                return quickstart
             elif name == 'setup':
                 from plexiq.commands.setup import setup
                 return setup
@@ -88,16 +92,18 @@ def cli(ctx, config_file, log_level):
     A safety-first tool for analyzing and managing your Plex media library.
 
     Commands:
-      setup     - Configure Plex authentication (run this first!)
-      collect   - Collect metadata from Plex library
-      analyze   - Analyze items and compute deletion scores
-      delete    - Delete items (dry-run by default)
-      backup    - Manage backups and operation records
-      config    - View and validate configuration
-      gui       - Launch GUI interface
+      setup      - Configure Plex authentication (run this first!)
+      quickstart - Quick first-time setup (opens browser, recommended!)
+      collect    - Collect metadata from Plex library
+      analyze    - Analyze items and compute deletion scores
+      delete     - Delete items (dry-run by default)
+      backup     - Manage backups and operation records
+      config     - View and validate configuration
+      gui        - Launch GUI interface
 
     Examples:
-      plexiq setup                    # First-time setup
+      plexiq quickstart          # Recommended first-time setup
+      plexiq setup               # Full setup with more options
       plexiq collect Movies --enrich
       plexiq analyze Movies --show-recommended
       plexiq delete Movies --dry-run
@@ -112,8 +118,8 @@ def cli(ctx, config_file, log_level):
     # Ensure we have a context object
     ctx.ensure_object(dict)
 
-    # Check if the command being run is 'setup'
-    is_setup_command = ctx.invoked_subcommand == 'setup'
+    # Check if the command being run is 'setup' or 'quickstart'
+    is_setup_command = ctx.invoked_subcommand in ('setup', 'quickstart')
 
     try:
         # Load configuration (don't require token for setup command)
@@ -133,12 +139,41 @@ def cli(ctx, config_file, log_level):
                 console.print(Panel(
                     "[yellow]⚠️  No Plex token configured![/yellow]\n\n"
                     "PlexIQ needs your Plex authentication token to access your library.\n\n"
-                    "Run: [cyan]plexiq setup --execute[/cyan] to configure your token.",
-                    title="Setup Required",
+                    "I'll launch the setup wizard to help you get started...",
+                    title="First-Run Setup",
                     border_style="yellow"
                 ))
                 console.print("\n[dim]Tip: The setup wizard will guide you through the process.[/dim]\n")
-                sys.exit(1)
+                
+                # Auto-launch setup wizard (direct import to avoid Click context issues)
+                from plexiq.token_installer import TokenInstaller
+                from rich.prompt import Confirm, Prompt
+                
+                installer = TokenInstaller(dry_run=False)
+                
+                # Use the installation workflow
+                from plexiq.commands.setup import _run_installation_workflow
+                success = _run_installation_workflow(installer, dry_run=False)
+                
+                if success:
+                    console.print(Panel(
+                        "[green]✅ Setup complete! PlexIQ is ready to use.[/green]\n\n"
+                        "Next steps:\n"
+                        "  • plexiq collect Movies --enrich\n"
+                        "  • plexiq analyze Movies --show-recommended\n"
+                        "  • plexiq gui",
+                        title="Ready",
+                        border_style="green"
+                    ))
+                    sys.exit(0)
+                else:
+                    console.print(Panel(
+                        "[red]❌ Setup failed[/red]\n\n"
+                        "Please run 'plexiq setup --execute' to try again.",
+                        title="Setup Required",
+                        border_style="red"
+                    ))
+                    sys.exit(1)
 
         # Override log level if specified
         if log_level:
@@ -157,21 +192,62 @@ def cli(ctx, config_file, log_level):
             console.print(Panel(
                 "[yellow]⚠️  No Plex token configured![/yellow]\n\n"
                 "PlexIQ needs your Plex authentication token to access your library.\n\n"
-                "Run: [cyan]plexiq setup --execute[/cyan] to configure your token.",
-                title="Setup Required",
+                "I'll launch the quickstart wizard to help you get started...",
+                title="First-Run Setup",
                 border_style="yellow"
             ))
-            console.print("\n[dim]Tip: The setup wizard will guide you through the process.[/dim]\n")
+            console.print("\n[dim]This will open your browser to sign in to Plex.[/dim]\n")
+            
+            # Auto-launch quickstart
+            from plexiq.token_installer import TokenInstaller
+            from rich.prompt import Confirm, Prompt
+            
+            installer = TokenInstaller(dry_run=False)
+            from plexiq.commands.setup import _run_installation_workflow
+            success = _run_installation_workflow(installer, dry_run=False)
+            
+            if success:
+                console.print(Panel(
+                    "[green]✅ Setup complete! PlexIQ is ready to use.[/green]\n\n"
+                    "Next steps:\n"
+                    "  • plexiq collect Movies --enrich\n"
+                    "  • plexiq analyze Movies --show-recommended\n"
+                    "  • plexiq gui",
+                    title="Ready",
+                    border_style="green"
+                ))
+                sys.exit(0)
+            else:
+                console.print(Panel(
+                    "[red]❌ Setup failed[/red]\n\n"
+                    "Please run 'plexiq quickstart' to try again, or\n"
+                    "'plexiq setup --execute' for more options.",
+                    title="Setup Required",
+                    border_style="red"
+                ))
+                sys.exit(1)
         else:
             console.print(Panel(
                 f"[red]Configuration Error:[/red]\n{e}\n\n"
-                "Please check your .env file. See .env.example for reference.",
+                "[yellow]How to fix:[/yellow]\n"
+                "  • Check your .env file exists and has valid settings\n"
+                "  • See .env.example for reference\n"
+                "  • Run 'plexiq config' to validate your configuration",
                 title="PlexIQ Configuration Error",
                 border_style="red"
             ))
+            console.print("\n[dim]Tip: Copy .env.example to .env and fill in your values.[/dim]\n")
         sys.exit(1)
     except Exception as e:
-        console.print(f"[red]Initialization Error: {e}[/red]")
+        console.print(Panel(
+            f"[red]Initialization Error:[/red]\n{e}\n\n"
+            "[yellow]How to fix:[/yellow]\n"
+            "  • Check that all dependencies are installed: pip install -r requirements.txt\n"
+            "  • Verify your Python version (requires 3.8+)\n"
+            "  • Check logs in data/logs/ for more details",
+            title="PlexIQ Error",
+            border_style="red"
+        ))
         sys.exit(1)
 
 
