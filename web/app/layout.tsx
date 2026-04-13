@@ -1,20 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Manrope, Audiowide } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const audiowide = Audiowide({
+  variable: "--font-audiowide",
   subsets: ["latin"],
+  weight: "400",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "PlexIQ v4.0 - Smart Plex Media Management",
-  description: "ProxMenux-inspired media library management with intelligent analysis and ONE SLIDER simplicity",
+  title: "PlexIQ v5.1 - Smart Media Management",
+  description: "Intelligent Plex library management. One slider. No drama.",
 };
 
 export default function RootLayout({
@@ -25,9 +28,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={[manrope.variable, audiowide.variable, "h-full antialiased dark"].join(" ")}
     >
-      <body className="min-h-full flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100">
+      <body className="min-h-full flex flex-col bg-gray-950 text-gray-100" style={{fontFamily: "var(--font-manrope), sans-serif"}}>
         {children}
       </body>
     </html>
