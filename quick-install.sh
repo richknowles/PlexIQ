@@ -1,6 +1,7 @@
 #!/bin/bash
 # PlexIQ v3.2 - Quick Installer (One-Liner)
 # Usage: curl -fsSL https://raw.githubusercontent.com/richknowles/PlexIQ/main/quick-install.sh | bash
+# Author: Rich Knowles (via Claude-Code)
 
 set -e
 

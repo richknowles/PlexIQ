@@ -6,7 +6,7 @@ A safety-first tool for analyzing and managing Plex media libraries.
 Implements dry-run-first architecture with CLI/GUI parity.
 """
 
-__version__ = '3.0.0'
+__version__ = '3.2.0'
 __author__ = 'Rich Knowles'
 __description__ = 'Smart Plex Media Library Management with Safety-First Design'
 
