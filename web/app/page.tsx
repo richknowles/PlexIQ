@@ -72,23 +72,35 @@ const decorCSS = `
   }
   .tab-btn.active { border-color: #C9A84C66; color: #C9A84C; background: #1A1408; box-shadow: 0 0 12px #C9A84C11; }
   .tab-btn:hover:not(.active) { color: #8B7355; border-color: #2A2318; }
+  a.resume-link { color: #C9A84C; text-decoration: none; transition: color 0.2s, text-shadow 0.2s; }
+  a.resume-link:hover { color: #E8C96C; text-shadow: 0 0 10px #C9A84C88; }
 `;
 
-const MOCK_MOVIES = [
-  { id: 1, title: "Blade Runner 2049", score: 0.88, size: "18.4 GB", rating: 8.0, plays: 0 },
-  { id: 2, title: "The Lighthouse", score: 0.85, size: "12.1 GB", rating: 7.5, plays: 0 },
-  { id: 3, title: "Midsommar", score: 0.82, size: "9.8 GB", rating: 7.1, plays: 1 },
-  { id: 4, title: "Enemy", score: 0.81, size: "7.2 GB", rating: 6.9, plays: 0 },
-  { id: 5, title: "Annihilation", score: 0.79, size: "14.3 GB", rating: 6.8, plays: 0 },
-  { id: 6, title: "Hereditary", score: 0.77, size: "8.9 GB", rating: 7.3, plays: 2 },
-  { id: 7, title: "Under the Silver Lake", score: 0.75, size: "6.4 GB", rating: 6.2, plays: 0 },
-  { id: 8, title: "mother!", score: 0.74, size: "11.2 GB", rating: 6.7, plays: 1 },
-  { id: 9, title: "The House That Jack Built", score: 0.72, size: "10.5 GB", rating: 6.8, plays: 0 },
-  { id: 10, title: "High Life", score: 0.71, size: "7.7 GB", rating: 6.4, plays: 0 },
+// Scores = deletion scores (0=keeper, 1=delete this).
+// More aggressive threshold = lower bar = more candidates shown.
+// Filter: score >= (1 - threshold)
+const ALL_MOCK_MOVIES = [
+  { id:  1, title: "Blade Runner 2049",          score: 0.92, size: "18.4 GB", rating: 8.0, plays: 0 },
+  { id:  2, title: "The Lighthouse",             score: 0.88, size: "12.1 GB", rating: 7.5, plays: 0 },
+  { id:  3, title: "Midsommar",                  score: 0.83, size: "9.8 GB",  rating: 7.1, plays: 1 },
+  { id:  4, title: "Enemy",                      score: 0.78, size: "7.2 GB",  rating: 6.9, plays: 0 },
+  { id:  5, title: "Annihilation",               score: 0.73, size: "14.3 GB", rating: 6.8, plays: 0 },
+  { id:  6, title: "Hereditary",                 score: 0.68, size: "8.9 GB",  rating: 7.3, plays: 2 },
+  { id:  7, title: "Under the Silver Lake",      score: 0.62, size: "6.4 GB",  rating: 6.2, plays: 0 },
+  { id:  8, title: "mother!",                    score: 0.57, size: "11.2 GB", rating: 6.7, plays: 1 },
+  { id:  9, title: "The House That Jack Built",  score: 0.51, size: "10.5 GB", rating: 6.8, plays: 0 },
+  { id: 10, title: "High Life",                  score: 0.46, size: "7.7 GB",  rating: 6.4, plays: 0 },
+  { id: 11, title: "Suspiria (2018)",             score: 0.41, size: "15.2 GB", rating: 6.8, plays: 0 },
+  { id: 12, title: "Border",                     score: 0.37, size: "5.9 GB",  rating: 7.1, plays: 1 },
+  { id: 13, title: "Cold War",                   score: 0.33, size: "8.3 GB",  rating: 7.6, plays: 0 },
+  { id: 14, title: "The Favourite",              score: 0.28, size: "12.8 GB", rating: 7.6, plays: 1 },
+  { id: 15, title: "First Reformed",             score: 0.24, size: "6.1 GB",  rating: 7.5, plays: 0 },
 ];
 
+const PAGE_SIZE = 7;
+
 export default function Dashboard() {
-  const [threshold, setThreshold] = useState(0.7);
+  const [threshold, setThreshold] = useState(0.5);
   const [selectedLibrary, setSelectedLibrary] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDryRun, setIsDryRun] = useState(true);
@@ -96,6 +108,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<LibraryStats | null>(null);
   const [activeTab, setActiveTab] = useState<"analyze" | "saved">("analyze");
   const [starred, setStarred] = useState<Set<number>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const libraries = ["Movies", "TV Shows", "Music", "4K Movies"];
 
@@ -110,13 +123,14 @@ export default function Dashboard() {
   const handleAnalyze = async () => {
     if (!selectedLibrary) { alert("Select a library first"); return; }
     setIsAnalyzing(true);
+    setVisibleCount(PAGE_SIZE);
     const stages = [
-      { stage: "connecting", message: "Connecting to Plex...", duration: 700 },
-      { stage: "collecting", message: "Pulling metadata...", duration: 1400 },
-      { stage: "enriching", message: "Fetching IMDb ratings...", duration: 1100 },
-      { stage: "enriching", message: "Fetching TMDb data...", duration: 1000 },
-      { stage: "scoring", message: "Calculating deletion scores...", duration: 1400 },
-      { stage: "complete", message: "Analysis complete.", duration: 300 },
+      { stage: "connecting",  message: "Connecting to Plex...",           duration: 700  },
+      { stage: "collecting",  message: "Pulling metadata...",             duration: 1400 },
+      { stage: "enriching",   message: "Fetching IMDb ratings...",        duration: 1100 },
+      { stage: "enriching",   message: "Fetching TMDb data...",           duration: 1000 },
+      { stage: "scoring",     message: "Calculating deletion scores...",  duration: 1400 },
+      { stage: "complete",    message: "Analysis complete.",              duration: 300  },
     ];
     let current = 0;
     for (const { stage, message, duration } of stages) {
@@ -129,15 +143,20 @@ export default function Dashboard() {
     setActiveTab("analyze");
   };
 
-  const filteredMovies = MOCK_MOVIES.filter(m => m.score >= threshold);
-  const savedMovies = MOCK_MOVIES.filter(m => starred.has(m.id));
+  // Higher threshold = more aggressive = lower bar = more candidates
+  // score >= (1 - threshold): threshold 0.9 → score >= 0.1 → most items
+  // threshold 0.1 → score >= 0.9 → only the worst items
+  const filteredMovies = ALL_MOCK_MOVIES.filter(m => m.score >= (1 - threshold));
+  const savedMovies = ALL_MOCK_MOVIES.filter(m => starred.has(m.id));
+  const visibleFiltered = filteredMovies.slice(0, visibleCount);
+  const hasMore = filteredMovies.length > visibleCount;
 
   const ScoreCell = ({ score }: { score: number }) => {
-    const color = score >= 0.85 ? "#E84040" : score >= 0.70 ? "#C9A84C" : "#8B7355";
+    const color = score >= 0.85 ? "#E84040" : score >= 0.65 ? "#C9A84C" : "#8B7355";
     return <span style={{ color, fontWeight: 700, fontFamily: "var(--font-audiowide)", fontSize: "13px" }}>{score.toFixed(2)}</span>;
   };
 
-  const ResultTable = ({ movies, showEmpty }: { movies: typeof MOCK_MOVIES, showEmpty: string }) => (
+  const ResultTable = ({ movies, showEmpty }: { movies: typeof ALL_MOCK_MOVIES, showEmpty: string }) => (
     movies.length === 0 ? (
       <div style={{ textAlign: "center", padding: "48px 0", color: "#4A3F28", fontFamily: "var(--font-audiowide)", fontSize: "11px", letterSpacing: "0.12em" }}>
         {showEmpty}
@@ -158,7 +177,7 @@ export default function Dashboard() {
             <tr key={m.id} className="result-row">
               <td style={{ padding: "10px 4px 10px 8px" }}>
                 <button className={"star-btn" + (starred.has(m.id) ? " starred" : "")} onClick={() => toggleStar(m.id)} title={starred.has(m.id) ? "Remove from saved" : "Save this title"}>
-                  {starred.has(m.id) ? "⭐" : "☆"}
+                  {starred.has(m.id) ? "\u2B50" : "\u2606"}
                 </button>
               </td>
               <td style={{ padding: "10px 8px", color: "#C8B99A", fontSize: "13px" }}>{m.title}</td>
@@ -177,9 +196,8 @@ export default function Dashboard() {
     <div style={{ minHeight: "100vh", background: "#0A0804", color: "#C8B99A" }}>
       <style dangerouslySetInnerHTML={{ __html: decorCSS }} />
 
-      {/* ── HEADER ── */}
+      {/* ─── HEADER ─── */}
       <header style={{ borderBottom: "1px solid #2A2318", background: "#0D0A04", position: "sticky", top: 0, zIndex: 50 }}>
-        {/* Gold top line */}
         <div style={{ height: "2px", background: "linear-gradient(90deg, transparent, #C9A84C, #E8C96C, #C9A84C, transparent)" }} />
 
         <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "16px 24px" }}>
@@ -192,7 +210,7 @@ export default function Dashboard() {
                   PLEXIQ
                 </h1>
                 <p style={{ margin: 0, fontSize: "9px", letterSpacing: "0.25em", color: "#4A3F28", fontFamily: "var(--font-audiowide)", marginTop: "2px" }}>
-                  v5.2 · CHICAGO EDITION
+                  v5.3 · CHICAGO EDITION
                 </p>
               </div>
             </div>
@@ -223,7 +241,7 @@ export default function Dashboard() {
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "9px", color: "#4A3F28", fontFamily: "var(--font-audiowide)", letterSpacing: "0.1em" }}>PLEX SERVER</div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
-                  <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#3A7A3A", boxShadow: "0 0 6px #3A7A3A", animation: "hotdogBob 2s ease-in-out infinite" }} />
+                  <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#3A7A3A", boxShadow: "0 0 6px #3A7A3A" }} />
                   <span style={{ fontSize: "11px", color: "#3A7A3A", fontFamily: "var(--font-audiowide)", letterSpacing: "0.05em" }}>CONNECTED</span>
                 </div>
               </div>
@@ -241,14 +259,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── MAIN ── */}
+      {/* ─── MAIN ─── */}
       <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "32px 24px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: "24px" }}>
 
-          {/* ── LEFT PANEL ── */}
+          {/* ─── LEFT PANEL ─── */}
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
-            {/* Library */}
+            {/* Library selector */}
             <div className="deco-card" style={{ padding: "20px" }}>
               <div style={{ fontFamily: "var(--font-audiowide)", fontSize: "9px", letterSpacing: "0.2em", color: "#4A3F28", marginBottom: "12px" }}>SELECT LIBRARY</div>
               <select
@@ -266,15 +284,15 @@ export default function Dashboard() {
               </select>
             </div>
 
-            {/* THE ONE SLIDER */}
+            {/* THE Slider */}
             <div className="deco-card" style={{ padding: "20px" }}>
               <ThresholdSlider value={threshold} onChange={setThreshold} disabled={isAnalyzing} />
             </div>
 
-            {/* Buttons */}
+            {/* Action buttons */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <button className="untouchable-btn primary" onClick={handleAnalyze} disabled={isAnalyzing || !selectedLibrary}>
-                {isAnalyzing ? "ANALYZING..." : "⟳ ANALYZE LIBRARY"}
+                {isAnalyzing ? "ANALYZING..." : "🔍 ANALYZE LIBRARY"}
               </button>
               <button className="untouchable-btn" onClick={() => setActiveTab("analyze")} disabled={!stats}>
                 DELETION CANDIDATES ({stats ? filteredMovies.length : "—"})
@@ -290,7 +308,7 @@ export default function Dashboard() {
                 className={"untouchable-btn danger" + (!isDryRun ? " live" : "")}
                 disabled={!stats || isAnalyzing}
               >
-                {isDryRun ? "🌭 DELETE CANDIDATES (DRY RUN)" : "🗑 DELETE CANDIDATES — LIVE"}
+                {isDryRun ? "🌭 DELETE CANDIDATES (DRY RUN)" : "🗑️ DELETE CANDIDATES — LIVE"}
               </button>
             </div>
 
@@ -303,14 +321,14 @@ export default function Dashboard() {
                     {isDryRun ? "DRY RUN MODE" : "LIVE DELETE MODE"}
                   </div>
                   <div style={{ fontSize: "11px", color: "#4A3F28", lineHeight: 1.5 }}>
-                    {isDryRun ? "Nothing will be deleted. Review candidates first." : "Content rated ≥8.0 is always protected."}
+                    {isDryRun ? "Nothing will be deleted. Review candidates first." : "Content rated \u22658.0 is always protected."}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ── RIGHT PANEL ── */}
+          {/* ─── RIGHT PANEL ─── */}
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
             {/* Progress */}
@@ -323,17 +341,17 @@ export default function Dashboard() {
             {/* Stats */}
             <LibraryStatsDisplay stats={stats} loading={isAnalyzing} />
 
-            {/* Welcome or results */}
+            {/* Welcome or Results */}
             {!stats && !isAnalyzing && (
               <div className="deco-card" style={{ padding: "64px 40px", textAlign: "center" }}>
                 <div style={{ fontSize: "72px", marginBottom: "20px" }}>🌭</div>
-                <h2 style={{ fontFamily: "var(--font-audiowide)", fontSize: "22px", letterSpacing: "0.1em", color: "#C9A84C", margin: "0 0 12px" }}>PLEXIQ v5.2</h2>
+                <h2 style={{ fontFamily: "var(--font-audiowide)", fontSize: "22px", letterSpacing: "0.1em", color: "#C9A84C", margin: "0 0 12px" }}>PLEXIQ v5.3</h2>
                 <p style={{ color: "#4A3F28", fontSize: "13px", lineHeight: 1.7, maxWidth: "360px", margin: "0 auto 28px" }}>
                   Chicago, 1931. You run this library. One slider. No nonsense. You decide what stays and what goes.
                 </p>
                 <div className="deco-sep" />
                 <div style={{ marginTop: "20px", fontFamily: "var(--font-audiowide)", fontSize: "10px", letterSpacing: "0.2em", color: "#2A2318" }}>
-                  THE ONE SLIDER · EVERYTHING YOU NEED · NOTHING YOU DON'T
+                  THE ONE SLIDER · EVERYTHING YOU NEED · NOTHING YOU DON&apos;T
                 </div>
               </div>
             )}
@@ -353,17 +371,28 @@ export default function Dashboard() {
                 {/* Table */}
                 <div style={{ padding: "0 16px 16px", overflowX: "auto" }}>
                   {activeTab === "analyze" && (
-                    <ResultTable movies={filteredMovies} showEmpty="NO CANDIDATES AT THIS THRESHOLD" />
+                    <ResultTable movies={visibleFiltered} showEmpty="NO CANDIDATES AT THIS THRESHOLD" />
                   )}
                   {activeTab === "saved" && (
                     <ResultTable movies={savedMovies} showEmpty="NO SAVED TITLES YET — STAR A CANDIDATE TO SAVE IT" />
                   )}
                 </div>
 
-                {activeTab === "analyze" && filteredMovies.length > 0 && (
-                  <div style={{ borderTop: "1px solid #1A1408", padding: "12px 24px", textAlign: "center" }}>
-                    <span style={{ fontFamily: "var(--font-audiowide)", fontSize: "10px", letterSpacing: "0.12em", color: "#C9A84C", cursor: "pointer" }}>
-                      LOAD MORE →
+                {/* Load More */}
+                {activeTab === "analyze" && hasMore && (
+                  <div
+                    style={{ borderTop: "1px solid #1A1408", padding: "12px 24px", textAlign: "center", cursor: "pointer" }}
+                    onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+                  >
+                    <span style={{ fontFamily: "var(--font-audiowide)", fontSize: "10px", letterSpacing: "0.12em", color: "#C9A84C" }}>
+                      LOAD MORE ↓  ({filteredMovies.length - visibleCount} remaining)
+                    </span>
+                  </div>
+                )}
+                {activeTab === "analyze" && !hasMore && filteredMovies.length > 0 && (
+                  <div style={{ borderTop: "1px solid #1A1408", padding: "10px 24px", textAlign: "center" }}>
+                    <span style={{ fontFamily: "var(--font-audiowide)", fontSize: "9px", letterSpacing: "0.12em", color: "#2A2318" }}>
+                      ALL {filteredMovies.length} CANDIDATES SHOWN
                     </span>
                   </div>
                 )}
@@ -373,12 +402,15 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* ── FOOTER ── */}
+      {/* ─── FOOTER ─── */}
       <div className="deco-sep" style={{ marginTop: "40px" }} />
       <footer style={{ padding: "16px 24px", maxWidth: "1280px", margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontFamily: "var(--font-audiowide)", fontSize: "9px", letterSpacing: "0.15em", color: "#2A2318" }}>
-            PLEXIQ v5.2 · BUILT BY RICH KNOWLES
+            PLEXIQ v5.3 · BUILT BY{" "}
+            <a href="https://resume.richknowles.com" target="_blank" rel="noopener noreferrer" className="resume-link">
+              RICH KNOWLES
+            </a>
           </div>
           <div style={{ display: "flex", gap: "20px" }}>
             {["GITHUB", "DOCS"].map(l => (
