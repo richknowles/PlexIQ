@@ -58,3 +58,21 @@ backups/
 cache/
 *.backup
 reports/
+
+# Node.js & NPM
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.pnpm-debug.log*
+
+# Next.js
+web/.next/
+web/out/
+web/.env*.local
+web/.vercel
+web/*.tsbuildinfo
+
+# TUI
+tui/logs/
