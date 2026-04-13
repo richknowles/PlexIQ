@@ -1,5 +1,5 @@
 #!/bin/bash
-# PlexIQ v3 Installation Script
+# PlexIQ v3.2 Installation Script
 # Author: Rich Knowles (via Claude-Code)
 # Safety: Validates environment before installation
 
@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Functions
 print_header() {
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BLUE}  PlexIQ v3 - Installation Script${NC}"
+    echo -e "${BLUE}  PlexIQ v3.2 - Installation Script${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 
