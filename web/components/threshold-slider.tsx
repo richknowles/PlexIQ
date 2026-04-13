@@ -3,7 +3,6 @@
 /**
  * PlexIQ v4.0 - The ONE SLIDER
  * ProxMenux-inspired minimalist design
- * The ONLY control you need for intelligent media management
  */
 
 import { useState, useCallback } from 'react';
@@ -28,46 +27,83 @@ export default function ThresholdSlider({
   }, [onChange]);
 
   const getRecommendationText = (threshold: number): string => {
-    if (threshold >= 0.8) return "Very Aggressive - Delete most unwatched content";
-    if (threshold >= 0.7) return "Aggressive - Recommended default";
-    if (threshold >= 0.6) return "Moderate - Balanced approach";
-    if (threshold >= 0.5) return "Conservative - Only obvious candidates";
-    return "Very Conservative - Minimal deletions";
+    if (threshold >= 0.8) return "Very Aggressive — delete most unwatched";
+    if (threshold >= 0.7) return "Aggressive — recommended default";
+    if (threshold >= 0.6) return "Moderate — balanced approach";
+    if (threshold >= 0.5) return "Conservative — obvious candidates only";
+    return "Very Conservative — minimal deletions";
   };
 
-  const getColorClass = (threshold: number): string => {
-    if (threshold >= 0.8) return "text-red-400";
-    if (threshold >= 0.7) return "text-amber-400";
-    if (threshold >= 0.6) return "text-yellow-400";
-    return "text-green-400";
+  const getColor = (threshold: number): string => {
+    if (threshold >= 0.8) return "#ef4444";
+    if (threshold >= 0.7) return "#F4A940";
+    if (threshold >= 0.6) return "#eab308";
+    return "#22c55e";
   };
+
+  const thumbStyle = `
+    .plexiq-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(251,191,36,0.5);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .plexiq-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 4px 12px rgba(251,191,36,0.7);
+    }
+    .plexiq-slider::-moz-range-thumb {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 8px rgba(251,191,36,0.5);
+    }
+    .plexiq-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 10px;
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+    }
+  `;
 
   return (
     <div className="space-y-6">
-      {/* The ONE SLIDER Header */}
+      <style dangerouslySetInnerHTML={{ __html: thumbStyle }} />
+
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-gray-100 mb-2">
+        <h2 className="text-2xl font-semibold text-gray-100 mb-1">
           Deletion Threshold
         </h2>
         <p className="text-sm text-gray-400">
-          Simple. Powerful. The only control you need.
+          The only control you need.
         </p>
       </div>
 
-      {/* Score Display */}
       <div className="text-center">
-        <div className="inline-block">
-          <div className="text-6xl font-bold bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">
-            {localValue.toFixed(2)}
-          </div>
-          <div className={`text-sm font-medium mt-2 ${getColorClass(localValue)}`}>
-            {getRecommendationText(localValue)}
-          </div>
+        <div
+          className="text-6xl font-bold"
+          style={{ color: getColor(localValue) }}
+        >
+          {localValue.toFixed(2)}
+        </div>
+        <div
+          className="text-sm font-medium mt-2"
+          style={{ color: getColor(localValue) }}
+        >
+          {getRecommendationText(localValue)}
         </div>
       </div>
 
-      {/* The Slider */}
-      <div className="relative px-4">
+      <div className="relative px-2">
         <input
           type="range"
           min="0.0"
@@ -76,18 +112,16 @@ export default function ThresholdSlider({
           value={localValue}
           onChange={handleChange}
           disabled={disabled}
-          className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer
-                     slider-thumb
-                     disabled:opacity-50 disabled:cursor-not-allowed"
+          className="plexiq-slider w-full disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             background: `linear-gradient(to right,
-              rgb(34, 197, 94) 0%,
-              rgb(234, 179, 8) ${(localValue - 0.5) * 100}%,
-              rgb(239, 68, 68) 100%)`
+              #22c55e 0%,
+              #F4A940 ${localValue * 50}%,
+              #ef4444 ${localValue * 100}%,
+              #334155 ${localValue * 100}%,
+              #334155 100%)`
           }}
         />
-
-        {/* Scale Markers */}
         <div className="flex justify-between mt-2 text-xs text-gray-500">
           <span>0.0</span>
           <span>0.5</span>
@@ -95,59 +129,27 @@ export default function ThresholdSlider({
         </div>
       </div>
 
-      {/* Info Panel */}
       <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <div className="text-gray-400">Current Threshold</div>
-            <div className="text-lg font-semibold text-amber-400">{localValue.toFixed(2)}</div>
+            <div className="text-gray-400">Threshold</div>
+            <div className="text-lg font-semibold" style={{ color: "#F4A940" }}>
+              {localValue.toFixed(2)}
+            </div>
           </div>
           <div>
-            <div className="text-gray-400">Safety Rating</div>
+            <div className="text-gray-400">Protected</div>
             <div className="text-lg font-semibold text-gray-100">≥ 8.0/10</div>
           </div>
         </div>
         <div className="mt-3 pt-3 border-t border-gray-700">
           <p className="text-xs text-gray-400">
-            ℹ️ Items with ratings ≥ 8.0/10 are <span className="text-green-400 font-semibold">never deleted</span>,
-            regardless of threshold. PlexIQ protects your highly-rated content.
+            ℹ️ Items rated ≥ 8.0/10 are{' '}
+            <span className="text-green-400 font-semibold">never deleted</span>,
+            regardless of threshold.
           </p>
         </div>
       </div>
-
-      <style jsx>{`
-        .slider-thumb::-webkit-slider-thumb {
-          appearance: none;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-          cursor: pointer;
-          box-shadow: 0 2px 8px rgba(251, 191, 36, 0.5);
-          transition: all 0.2s ease;
-        }
-
-        .slider-thumb::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
-          box-shadow: 0 4px 12px rgba(251, 191, 36, 0.7);
-        }
-
-        .slider-thumb::-moz-range-thumb {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 2px 8px rgba(251, 191, 36, 0.5);
-          transition: all 0.2s ease;
-        }
-
-        .slider-thumb::-moz-range-thumb:hover {
-          transform: scale(1.2);
-          box-shadow: 0 4px 12px rgba(251, 191, 36, 0.7);
-        }
-      `}</style>
     </div>
   );
 }
