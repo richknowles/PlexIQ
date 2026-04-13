@@ -1,16 +1,12 @@
-# PlexIQ v3.2 🎬
+# PlexIQ v5.3 — The Chicago Edition 🌭
 
-**Smart Plex Media Library Management with Safety-First Design**
+<p align="center">
+  <img src="plexiq-demo.gif" alt="PlexIQ v5.3 demo" width="700" />
+</p>
 
-PlexIQ is an intelligent media library management tool for Plex that helps you analyze, organize, and optimize your media collection. Built with a safety-first philosophy, PlexIQ defaults to dry-run mode for all destructive operations and provides detailed analysis before any action.
+**Smart Plex Media Library Management. One slider. No nonsense. You decide what stays.**
 
-## 🆕 What's New in v3.2
-
-- **One-Liner Installer** - Install PlexIQ with a single command
-- **Docker Support** - Run PlexIQ in containers with docker-compose
-- **Guided Token Installer** - Interactive setup wizard for easy Plex authentication
-- **Browser-Based Token Capture** - Automatic token retrieval from Plex login
-- **Enhanced Security** - Secure token storage with restricted file permissions
+PlexIQ analyzes your Plex library using multi-factor scoring (play count, ratings, file size, age, quality) and surfaces deletion candidates through a cinematic 1930s Chicago noir interface. Built with safety-first design — dry-run mode by default, ratings ≥8.0 always protected.
 
 ---
 
