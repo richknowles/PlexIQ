@@ -1,257 +1,389 @@
 "use client";
 
-import { useState } from 'react';
-import ThresholdSlider from '@/components/threshold-slider';
-import LibraryStatsDisplay from '@/components/library-stats';
-import MustardProgress from '@/components/mustard-progress';
-import { LibraryStats } from '@/types/plexiq';
+import { useState } from "react";
+import ThresholdSlider from "@/components/threshold-slider";
+import LibraryStatsDisplay from "@/components/library-stats";
+import MustardProgress from "@/components/mustard-progress";
+import { LibraryStats } from "@/types/plexiq";
+
+const decorCSS = `
+  @keyframes decoFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .deco-card {
+    background: linear-gradient(160deg, #181410 0%, #111008 100%);
+    border: 1px solid #2A2318;
+    border-radius: 4px;
+    position: relative;
+  }
+  .deco-card::before, .deco-card::after {
+    content: "";
+    position: absolute;
+    width: 12px; height: 12px;
+    border-color: #C9A84C;
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .deco-card::before { top: 4px; left: 4px; border-width: 1px 0 0 1px; }
+  .deco-card::after  { bottom: 4px; right: 4px; border-width: 0 1px 1px 0; }
+  .deco-sep {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, #C9A84C55 30%, #C9A84C88 50%, #C9A84C55 70%, transparent 100%);
+    margin: 0;
+  }
+  .gold-text { color: #C9A84C; }
+  .untouchable-btn {
+    background: linear-gradient(135deg, #1A1408 0%, #0D0A04 100%);
+    border: 1px solid #C9A84C66;
+    color: #C9A84C;
+    font-family: var(--font-audiowide);
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    transition: all 0.2s;
+    cursor: pointer;
+    padding: 14px 20px;
+    border-radius: 2px;
+    width: 100%;
+  }
+  .untouchable-btn:hover { background: linear-gradient(135deg, #2A1E08 0%, #1A1208 100%); border-color: #C9A84C; box-shadow: 0 0 16px #C9A84C22; }
+  .untouchable-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .untouchable-btn.primary {
+    background: linear-gradient(135deg, #C9A84C 0%, #8B6914 100%);
+    color: #0D0A04;
+    border-color: #E8C96C;
+  }
+  .untouchable-btn.primary:hover { background: linear-gradient(135deg, #E8C96C 0%, #C9A84C 100%); box-shadow: 0 0 24px #C9A84C44; }
+  .untouchable-btn.danger { border-color: #8B1C1C88; color: #C05050; }
+  .untouchable-btn.danger:hover { background: linear-gradient(135deg, #2A0808 0%, #1A0404 100%); border-color: #C05050; box-shadow: 0 0 16px #8B1C1C33; }
+  .untouchable-btn.danger.live { border-color: #C05050; color: #E07070; background: linear-gradient(135deg, #3A0808 0%, #1A0404 100%); }
+  .star-btn { background: none; border: none; cursor: pointer; padding: 2px 6px; font-size: 16px; transition: transform 0.15s, filter 0.15s; }
+  .star-btn:hover { transform: scale(1.2); filter: drop-shadow(0 0 4px #C9A84C); }
+  .star-btn.starred { filter: drop-shadow(0 0 6px #C9A84C); }
+  .result-row { transition: background 0.15s; border-bottom: 1px solid #1A1408; }
+  .result-row:hover { background: #1A1408; }
+  .tab-btn {
+    font-family: var(--font-audiowide);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    padding: 10px 20px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: none;
+    color: #4A3F28;
+  }
+  .tab-btn.active { border-color: #C9A84C66; color: #C9A84C; background: #1A1408; box-shadow: 0 0 12px #C9A84C11; }
+  .tab-btn:hover:not(.active) { color: #8B7355; border-color: #2A2318; }
+`;
+
+const MOCK_MOVIES = [
+  { id: 1, title: "Blade Runner 2049", score: 0.88, size: "18.4 GB", rating: 8.0, plays: 0 },
+  { id: 2, title: "The Lighthouse", score: 0.85, size: "12.1 GB", rating: 7.5, plays: 0 },
+  { id: 3, title: "Midsommar", score: 0.82, size: "9.8 GB", rating: 7.1, plays: 1 },
+  { id: 4, title: "Enemy", score: 0.81, size: "7.2 GB", rating: 6.9, plays: 0 },
+  { id: 5, title: "Annihilation", score: 0.79, size: "14.3 GB", rating: 6.8, plays: 0 },
+  { id: 6, title: "Hereditary", score: 0.77, size: "8.9 GB", rating: 7.3, plays: 2 },
+  { id: 7, title: "Under the Silver Lake", score: 0.75, size: "6.4 GB", rating: 6.2, plays: 0 },
+  { id: 8, title: "mother!", score: 0.74, size: "11.2 GB", rating: 6.7, plays: 1 },
+  { id: 9, title: "The House That Jack Built", score: 0.72, size: "10.5 GB", rating: 6.8, plays: 0 },
+  { id: 10, title: "High Life", score: 0.71, size: "7.7 GB", rating: 6.4, plays: 0 },
+];
 
 export default function Dashboard() {
   const [threshold, setThreshold] = useState(0.7);
-  const [selectedLibrary, setSelectedLibrary] = useState<string>('');
+  const [selectedLibrary, setSelectedLibrary] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDryRun, setIsDryRun] = useState(true);
-  const [progress, setProgress] = useState({ current: 0, total: 0, stage: '', message: '' });
+  const [progress, setProgress] = useState({ current: 0, total: 0, stage: "", message: "" });
   const [stats, setStats] = useState<LibraryStats | null>(null);
+  const [activeTab, setActiveTab] = useState<"analyze" | "saved">("analyze");
+  const [starred, setStarred] = useState<Set<number>>(new Set());
 
-  const libraries = ['Movies', 'TV Shows', 'Music', '4K Movies'];
+  const libraries = ["Movies", "TV Shows", "Music", "4K Movies"];
 
-  const handleAnalyze = async () => {
-    if (!selectedLibrary) {
-      alert('Please select a library first');
-      return;
-    }
-    setIsAnalyzing(true);
-    const stages = [
-      { stage: 'collecting', message: 'Connecting to Plex server...', duration: 800 },
-      { stage: 'collecting', message: 'Collecting metadata...', duration: 1500 },
-      { stage: 'enriching', message: 'Enriching with IMDb ratings...', duration: 1200 },
-      { stage: 'enriching', message: 'Enriching with TMDb data...', duration: 1200 },
-      { stage: 'analyzing', message: 'Calculating deletion scores...', duration: 1500 },
-      { stage: 'complete', message: 'Analysis complete!', duration: 400 },
-    ];
-    let current = 0;
-    const total = 100;
-    for (const { stage, message, duration } of stages) {
-      setProgress({ current, total, stage, message });
-      await new Promise(resolve => setTimeout(resolve, duration));
-      current += Math.floor(100 / stages.length);
-    }
-    setStats({
-      name: selectedLibrary,
-      itemCount: 1247,
-      totalSize: 5_432_109_876_543,
-      avgScore: 0.65,
-      deletionCandidates: 342,
-      potentialSpaceSaved: 1_234_567_890_123,
+  const toggleStar = (id: number) => {
+    setStarred(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
     });
-    setIsAnalyzing(false);
   };
 
+  const handleAnalyze = async () => {
+    if (!selectedLibrary) { alert("Select a library first"); return; }
+    setIsAnalyzing(true);
+    const stages = [
+      { stage: "connecting", message: "Connecting to Plex...", duration: 700 },
+      { stage: "collecting", message: "Pulling metadata...", duration: 1400 },
+      { stage: "enriching", message: "Fetching IMDb ratings...", duration: 1100 },
+      { stage: "enriching", message: "Fetching TMDb data...", duration: 1000 },
+      { stage: "scoring", message: "Calculating deletion scores...", duration: 1400 },
+      { stage: "complete", message: "Analysis complete.", duration: 300 },
+    ];
+    let current = 0;
+    for (const { stage, message, duration } of stages) {
+      setProgress({ current, total: 100, stage, message });
+      await new Promise(r => setTimeout(r, duration));
+      current += Math.floor(100 / stages.length);
+    }
+    setStats({ name: selectedLibrary, itemCount: 1247, totalSize: 5_432_109_876_543, avgScore: 0.65, deletionCandidates: 342, potentialSpaceSaved: 1_234_567_890_123 });
+    setIsAnalyzing(false);
+    setActiveTab("analyze");
+  };
+
+  const filteredMovies = MOCK_MOVIES.filter(m => m.score >= threshold);
+  const savedMovies = MOCK_MOVIES.filter(m => starred.has(m.id));
+
+  const ScoreCell = ({ score }: { score: number }) => {
+    const color = score >= 0.85 ? "#E84040" : score >= 0.70 ? "#C9A84C" : "#8B7355";
+    return <span style={{ color, fontWeight: 700, fontFamily: "var(--font-audiowide)", fontSize: "13px" }}>{score.toFixed(2)}</span>;
+  };
+
+  const ResultTable = ({ movies, showEmpty }: { movies: typeof MOCK_MOVIES, showEmpty: string }) => (
+    movies.length === 0 ? (
+      <div style={{ textAlign: "center", padding: "48px 0", color: "#4A3F28", fontFamily: "var(--font-audiowide)", fontSize: "11px", letterSpacing: "0.12em" }}>
+        {showEmpty}
+      </div>
+    ) : (
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ borderBottom: "1px solid #2A2318" }}>
+            {["", "TITLE", "SCORE", "SIZE", "RTG", "PLAYS"].map(h => (
+              <th key={h} style={{ padding: "10px 8px", textAlign: "left", fontFamily: "var(--font-audiowide)", fontSize: "9px", letterSpacing: "0.15em", color: "#4A3F28", fontWeight: 400 }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {movies.map(m => (
+            <tr key={m.id} className="result-row">
+              <td style={{ padding: "10px 4px 10px 8px" }}>
+                <button className={"star-btn" + (starred.has(m.id) ? " starred" : "")} onClick={() => toggleStar(m.id)} title={starred.has(m.id) ? "Remove from saved" : "Save this title"}>
+                  {starred.has(m.id) ? "⭐" : "☆"}
+                </button>
+              </td>
+              <td style={{ padding: "10px 8px", color: "#C8B99A", fontSize: "13px" }}>{m.title}</td>
+              <td style={{ padding: "10px 8px" }}><ScoreCell score={m.score} /></td>
+              <td style={{ padding: "10px 8px", color: "#6B5E3C", fontSize: "12px" }}>{m.size}</td>
+              <td style={{ padding: "10px 8px", color: "#6B5E3C", fontSize: "12px" }}>{m.rating}</td>
+              <td style={{ padding: "10px 8px", color: "#4A3F28", fontSize: "12px" }}>{m.plays}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  );
+
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
-      {/* Header */}
-      <header className="border-b border-amber-900/30 bg-gray-900/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="text-5xl leading-none select-none">🌭</div>
+    <div style={{ minHeight: "100vh", background: "#0A0804", color: "#C8B99A" }}>
+      <style dangerouslySetInnerHTML={{ __html: decorCSS }} />
+
+      {/* ── HEADER ── */}
+      <header style={{ borderBottom: "1px solid #2A2318", background: "#0D0A04", position: "sticky", top: 0, zIndex: 50 }}>
+        {/* Gold top line */}
+        <div style={{ height: "2px", background: "linear-gradient(90deg, transparent, #C9A84C, #E8C96C, #C9A84C, transparent)" }} />
+
+        <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "16px 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            {/* Logo */}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <div style={{ fontSize: "42px", lineHeight: 1, userSelect: "none" }}>🌭</div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight" style={{background: 'linear-gradient(90deg, #f59e0b, #fbbf24)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontFamily: 'var(--font-audiowide), monospace'}}>
-                  PlexIQ
+                <h1 style={{ fontFamily: "var(--font-audiowide)", fontSize: "28px", letterSpacing: "0.06em", background: "linear-gradient(135deg, #E8C96C 0%, #C9A84C 50%, #8B6914 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>
+                  PLEXIQ
                 </h1>
-                <p className="text-xs text-gray-500 mt-0.5 tracking-widest uppercase">
-                  v5.1 &nbsp;·&nbsp; Smart Media Management
+                <p style={{ margin: 0, fontSize: "9px", letterSpacing: "0.25em", color: "#4A3F28", fontFamily: "var(--font-audiowide)", marginTop: "2px" }}>
+                  v5.2 · CHICAGO EDITION
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-6">
-              <label className="flex items-center gap-2 cursor-pointer select-none" title="Toggle dry-run mode">
-                <span className="text-xs text-gray-400">{isDryRun ? 'Dry Run' : 'Live Mode'}</span>
+
+            {/* Right controls */}
+            <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+              {/* Dry-run toggle */}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "10px", color: "#4A3F28", fontFamily: "var(--font-audiowide)", letterSpacing: "0.1em" }}>
+                  {isDryRun ? "DRY RUN" : "LIVE MODE"}
+                </span>
                 <div
                   onClick={() => setIsDryRun(!isDryRun)}
-                  className={"relative w-10 h-5 rounded-full transition-colors duration-200 " + (isDryRun ? 'bg-gray-700' : 'bg-red-700')}
+                  style={{
+                    position: "relative", width: "44px", height: "22px", borderRadius: "11px", cursor: "pointer",
+                    background: isDryRun ? "#1A1408" : "#3A0808", border: `1px solid ${isDryRun ? "#2A2318" : "#8B1C1C"}`,
+                    transition: "all 0.2s",
+                  }}
                 >
-                  <div className={"absolute top-0.5 w-4 h-4 rounded-full transition-all duration-200 " + (isDryRun ? 'left-0.5 bg-gray-400' : 'left-5 bg-red-300')} />
+                  <div style={{
+                    position: "absolute", top: "3px", width: "16px", height: "16px", borderRadius: "50%",
+                    background: isDryRun ? "#4A3F28" : "#C05050", left: isDryRun ? "3px" : "25px", transition: "all 0.2s",
+                  }} />
                 </div>
-              </label>
-              <div className="text-right">
-                <div className="text-xs text-gray-500">Plex Server</div>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-green-400 font-medium">Connected</span>
+              </div>
+
+              {/* Plex status */}
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "9px", color: "#4A3F28", fontFamily: "var(--font-audiowide)", letterSpacing: "0.1em" }}>PLEX SERVER</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
+                  <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#3A7A3A", boxShadow: "0 0 6px #3A7A3A", animation: "hotdogBob 2s ease-in-out infinite" }} />
+                  <span style={{ fontSize: "11px", color: "#3A7A3A", fontFamily: "var(--font-audiowide)", letterSpacing: "0.05em" }}>CONNECTED</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        <div className="deco-sep" />
       </header>
 
-      {/* Live Mode Warning Banner */}
+      {/* Live warning */}
       {!isDryRun && (
-        <div className="bg-red-900/40 border-b border-red-700/50 px-6 py-2 text-center">
-          <span className="text-sm text-red-300 font-semibold">⚠ Live Mode — deletions are permanent</span>
+        <div style={{ background: "#2A0404", borderBottom: "1px solid #8B1C1C55", padding: "8px 24px", textAlign: "center", fontFamily: "var(--font-audiowide)", fontSize: "10px", letterSpacing: "0.15em", color: "#C05050" }}>
+          ⚠ LIVE MODE — DELETIONS ARE PERMANENT AND IRREVERSIBLE
         </div>
       )}
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column */}
-          <div className="lg:col-span-1 space-y-5">
-            {/* Library Selection */}
-            <div className="bg-gray-800/60 rounded-xl p-5 border border-gray-700/60">
-              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">Library</h3>
+      {/* ── MAIN ── */}
+      <main style={{ maxWidth: "1280px", margin: "0 auto", padding: "32px 24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: "24px" }}>
+
+          {/* ── LEFT PANEL ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
+            {/* Library */}
+            <div className="deco-card" style={{ padding: "20px" }}>
+              <div style={{ fontFamily: "var(--font-audiowide)", fontSize: "9px", letterSpacing: "0.2em", color: "#4A3F28", marginBottom: "12px" }}>SELECT LIBRARY</div>
               <select
                 value={selectedLibrary}
-                onChange={(e) => setSelectedLibrary(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:border-transparent"
-                style={{focusRingColor: '#f59e0b'} as React.CSSProperties}
+                onChange={e => setSelectedLibrary(e.target.value)}
                 disabled={isAnalyzing}
+                style={{
+                  width: "100%", background: "#0D0A04", border: "1px solid #2A2318",
+                  color: "#C8B99A", padding: "10px 14px", fontFamily: "var(--font-audiowide)",
+                  fontSize: "11px", letterSpacing: "0.08em", cursor: "pointer", outline: "none",
+                }}
               >
-                <option value="">Choose a library...</option>
-                {libraries.map((lib) => (
-                  <option key={lib} value={lib}>{lib}</option>
-                ))}
+                <option value="">CHOOSE LIBRARY...</option>
+                {libraries.map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}
               </select>
             </div>
 
             {/* THE ONE SLIDER */}
-            <div className="bg-gray-800/60 rounded-xl p-5 border border-gray-700/60">
-              <ThresholdSlider
-                value={threshold}
-                onChange={setThreshold}
-                disabled={isAnalyzing}
-              />
+            <div className="deco-card" style={{ padding: "20px" }}>
+              <ThresholdSlider value={threshold} onChange={setThreshold} disabled={isAnalyzing} />
             </div>
 
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <button
-                onClick={handleAnalyze}
-                disabled={isAnalyzing || !selectedLibrary}
-                className="w-full font-semibold py-4 px-6 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
-                style={{background: 'linear-gradient(135deg, #d97706, #f59e0b)', color: '#111827'}}
-              >
-                {isAnalyzing ? '⏳ Analyzing...' : '🔍 Analyze Library'}
+            {/* Buttons */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <button className="untouchable-btn primary" onClick={handleAnalyze} disabled={isAnalyzing || !selectedLibrary}>
+                {isAnalyzing ? "ANALYZING..." : "⟳ ANALYZE LIBRARY"}
               </button>
-
-              <button
-                disabled={!stats || isAnalyzing}
-                className="w-full bg-gray-800 text-gray-100 font-semibold py-4 px-6 rounded-xl hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 border border-gray-700"
-              >
-                📊 View All Recommendations
+              <button className="untouchable-btn" onClick={() => setActiveTab("analyze")} disabled={!stats}>
+                DELETION CANDIDATES ({stats ? filteredMovies.length : "—"})
               </button>
-
               <button
-                disabled={!stats || isAnalyzing}
-                className={"w-full font-semibold py-4 px-6 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 border " + (!isDryRun ? 'bg-red-700/60 border-red-600 text-red-100 hover:bg-red-700' : 'bg-gray-800/60 border-gray-600 text-gray-300 hover:bg-gray-700/60')}
+                className={"untouchable-btn" + (starred.size > 0 ? " active" : "")}
+                onClick={() => setActiveTab("saved")}
+                style={{ borderColor: starred.size > 0 ? "#C9A84C88" : undefined, color: starred.size > 0 ? "#C9A84C" : undefined }}
               >
-                {isDryRun ? '🌭 Delete Candidates (Dry Run)' : '🗑️ Delete Candidates — LIVE'}
+                ⭐ SAVED LIST ({starred.size})
+              </button>
+              <button
+                className={"untouchable-btn danger" + (!isDryRun ? " live" : "")}
+                disabled={!stats || isAnalyzing}
+              >
+                {isDryRun ? "🌭 DELETE CANDIDATES (DRY RUN)" : "🗑 DELETE CANDIDATES — LIVE"}
               </button>
             </div>
 
-            {/* Mode indicator */}
-            <div className={"rounded-xl p-4 border " + (isDryRun ? 'bg-blue-900/10 border-blue-800/30' : 'bg-red-900/10 border-red-800/30')}>
-              <div className="flex items-start gap-3">
-                <div className="text-xl">{isDryRun ? '🛡️' : '⚡'}</div>
+            {/* Mode card */}
+            <div className="deco-card" style={{ padding: "16px" }}>
+              <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                <div style={{ fontSize: "20px" }}>{isDryRun ? "🛡️" : "⚡"}</div>
                 <div>
-                  <div className={"text-sm font-semibold mb-1 " + (isDryRun ? 'text-blue-400' : 'text-red-400')}>
-                    {isDryRun ? 'Dry Run Mode' : 'Live Delete Mode'}
+                  <div style={{ fontFamily: "var(--font-audiowide)", fontSize: "10px", letterSpacing: "0.12em", color: isDryRun ? "#4A7A8D" : "#C05050", marginBottom: "4px" }}>
+                    {isDryRun ? "DRY RUN MODE" : "LIVE DELETE MODE"}
                   </div>
-                  <div className="text-xs text-gray-400">
-                    {isDryRun
-                      ? 'Nothing will be deleted. Review candidates first.'
-                      : 'Content rated ≥8.0 is always protected.'}
+                  <div style={{ fontSize: "11px", color: "#4A3F28", lineHeight: 1.5 }}>
+                    {isDryRun ? "Nothing will be deleted. Review candidates first." : "Content rated ≥8.0 is always protected."}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* ── RIGHT PANEL ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
+            {/* Progress */}
             {isAnalyzing && (
-              <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/60">
-                <MustardProgress
-                  current={progress.current}
-                  total={progress.total}
-                  message={progress.message}
-                  stage={progress.stage}
-                />
+              <div className="deco-card" style={{ padding: "20px" }}>
+                <MustardProgress current={progress.current} total={progress.total} message={progress.message} stage={progress.stage} />
               </div>
             )}
 
+            {/* Stats */}
             <LibraryStatsDisplay stats={stats} loading={isAnalyzing} />
 
+            {/* Welcome or results */}
             {!stats && !isAnalyzing && (
-              <div className="bg-gray-800/60 rounded-xl p-14 border border-gray-700/60 text-center">
-                <div className="text-7xl mb-5 select-none">🌭</div>
-                <h2 className="text-2xl font-bold text-gray-100 mb-3">
-                  PlexIQ v5.1
-                </h2>
-                <p className="text-gray-400 max-w-sm mx-auto mb-7 text-sm leading-relaxed">
-                  Select a library, set your threshold, and let PlexIQ find what needs to go.
-                  One slider. No drama.
+              <div className="deco-card" style={{ padding: "64px 40px", textAlign: "center" }}>
+                <div style={{ fontSize: "72px", marginBottom: "20px" }}>🌭</div>
+                <h2 style={{ fontFamily: "var(--font-audiowide)", fontSize: "22px", letterSpacing: "0.1em", color: "#C9A84C", margin: "0 0 12px" }}>PLEXIQ v5.2</h2>
+                <p style={{ color: "#4A3F28", fontSize: "13px", lineHeight: 1.7, maxWidth: "360px", margin: "0 auto 28px" }}>
+                  Chicago, 1931. You run this library. One slider. No nonsense. You decide what stays and what goes.
                 </p>
-                <div className="inline-block border border-amber-600/30 bg-amber-900/10 rounded-xl px-6 py-4">
-                  <div className="text-sm text-amber-400 font-semibold mb-1">THE ONE SLIDER</div>
-                  <div className="text-xs text-gray-500">Everything you need. Nothing you don't.</div>
+                <div className="deco-sep" />
+                <div style={{ marginTop: "20px", fontFamily: "var(--font-audiowide)", fontSize: "10px", letterSpacing: "0.2em", color: "#2A2318" }}>
+                  THE ONE SLIDER · EVERYTHING YOU NEED · NOTHING YOU DON'T
                 </div>
               </div>
             )}
 
             {stats && !isAnalyzing && (
-              <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/60">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-lg font-semibold text-gray-100">Deletion Candidates</h3>
-                  <span className="text-xs text-gray-500 bg-gray-700/50 px-3 py-1 rounded-full">Top 50</span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-gray-700">
-                      <tr className="text-left text-gray-500 text-xs uppercase tracking-wider">
-                        <th className="pb-3 font-medium">Title</th>
-                        <th className="pb-3 font-medium">Score</th>
-                        <th className="pb-3 font-medium">Size</th>
-                        <th className="pb-3 font-medium">Rating</th>
-                        <th className="pb-3 font-medium">Plays</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-gray-300 divide-y divide-gray-800/80">
-                      {[...Array(10)].map((_, i) => (
-                        <tr key={i} className="hover:bg-gray-700/20 transition-colors">
-                          <td className="py-3 pr-4">Sample Movie {i + 1}</td>
-                          <td className="py-3">
-                            <span className="text-amber-400 font-bold">{(0.7 + Math.random() * 0.28).toFixed(2)}</span>
-                          </td>
-                          <td className="py-3 text-gray-400">2.4 GB</td>
-                          <td className="py-3 text-gray-400">6.{i + 1}</td>
-                          <td className="py-3 text-gray-500">0</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-5 pt-4 border-t border-gray-700/60 text-center">
-                  <button className="text-sm text-amber-400 hover:text-amber-300 font-medium transition-colors">
-                    Load more →
+              <div className="deco-card" style={{ padding: 0, overflow: "hidden" }}>
+                {/* Tabs */}
+                <div style={{ display: "flex", borderBottom: "1px solid #2A2318", padding: "0 16px" }}>
+                  <button className={"tab-btn" + (activeTab === "analyze" ? " active" : "")} onClick={() => setActiveTab("analyze")}>
+                    CANDIDATES ({filteredMovies.length})
+                  </button>
+                  <button className={"tab-btn" + (activeTab === "saved" ? " active" : "")} onClick={() => setActiveTab("saved")}>
+                    ⭐ SAVED ({starred.size})
                   </button>
                 </div>
+
+                {/* Table */}
+                <div style={{ padding: "0 16px 16px", overflowX: "auto" }}>
+                  {activeTab === "analyze" && (
+                    <ResultTable movies={filteredMovies} showEmpty="NO CANDIDATES AT THIS THRESHOLD" />
+                  )}
+                  {activeTab === "saved" && (
+                    <ResultTable movies={savedMovies} showEmpty="NO SAVED TITLES YET — STAR A CANDIDATE TO SAVE IT" />
+                  )}
+                </div>
+
+                {activeTab === "analyze" && filteredMovies.length > 0 && (
+                  <div style={{ borderTop: "1px solid #1A1408", padding: "12px 24px", textAlign: "center" }}>
+                    <span style={{ fontFamily: "var(--font-audiowide)", fontSize: "10px", letterSpacing: "0.12em", color: "#C9A84C", cursor: "pointer" }}>
+                      LOAD MORE →
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
       </main>
 
-      <footer className="mt-auto border-t border-gray-800/60">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between text-xs text-gray-600">
-            <div>PlexIQ v5.1 &nbsp;·&nbsp; Built by Rich Knowles</div>
-            <div className="flex items-center gap-5">
-              <a href="https://github.com/richknowles/PlexIQ" className="hover:text-gray-400 transition-colors">GitHub</a>
-              <a href="/docs" className="hover:text-gray-400 transition-colors">Docs</a>
-            </div>
+      {/* ── FOOTER ── */}
+      <div className="deco-sep" style={{ marginTop: "40px" }} />
+      <footer style={{ padding: "16px 24px", maxWidth: "1280px", margin: "0 auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontFamily: "var(--font-audiowide)", fontSize: "9px", letterSpacing: "0.15em", color: "#2A2318" }}>
+            PLEXIQ v5.2 · BUILT BY RICH KNOWLES
+          </div>
+          <div style={{ display: "flex", gap: "20px" }}>
+            {["GITHUB", "DOCS"].map(l => (
+              <span key={l} style={{ fontFamily: "var(--font-audiowide)", fontSize: "9px", letterSpacing: "0.15em", color: "#2A2318", cursor: "pointer" }}>{l}</span>
+            ))}
           </div>
         </div>
       </footer>
