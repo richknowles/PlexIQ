@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlexIQ · Codebase Analysis</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Audiowide&family=Manrope:wght@300;400;600;700&display=swap');
+
+  :root {
+    --gold:#C9A84C; --gold-hi:#E8C96C; --red:#E84040;
+    --bg:#0A0804; --bg2:#111008; --bg3:#181410;
+    --text:#C8B99A; --dim:#4A3F28; --border:#2A2318;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Manrope',sans-serif;min-height:100vh;}
+
+  header{background:#0D0A04;border-bottom:1px solid var(--border);padding:18px 32px 14px;position:sticky;top:0;z-index:50;}
+  .gold-line{height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold-hi),var(--gold),transparent);margin-bottom:14px;}
+  header h1{font-family:'Audiowide',sans-serif;font-size:24px;letter-spacing:.08em;background:linear-gradient(135deg,#E8C96C,#C9A84C,#8B6914);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  header p{font-family:'Audiowide',sans-serif;font-size:9px;letter-spacing:.25em;color:var(--dim);margin-top:3px;}
+  .deco-sep{height:1px;background:linear-gradient(90deg,transparent,#C9A84C55,#C9A84C88,#C9A84C55,transparent);}
+
+  main{max-width:1260px;margin:0 auto;padding:28px 20px;display:grid;gap:20px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+
+  .card{background:linear-gradient(160deg,var(--bg3),var(--bg2));border:1px solid var(--border);border-radius:4px;padding:22px;position:relative;}
+  .card::before,.card::after{content:"";position:absolute;width:12px;height:12px;border-color:var(--gold);border-style:solid;opacity:.45;}
+  .card::before{top:4px;left:4px;border-width:1px 0 0 1px;}
+  .card::after{bottom:4px;right:4px;border-width:0 1px 1px 0;}
+  .card-title{font-family:'Audiowide',sans-serif;font-size:9px;letter-spacing:.2em;color:var(--dim);margin-bottom:18px;}
+
+  .stat{text-align:center;padding:16px;}
+  .stat-val{font-family:'Audiowide',sans-serif;font-size:28px;color:var(--gold);display:block;}
+  .stat-lbl{font-size:9px;color:var(--dim);letter-spacing:.12em;font-family:'Audiowide',sans-serif;margin-top:4px;display:block;}
+
+  svg{display:block;}
+  .tip{position:fixed;background:#1C1610;border:1px solid var(--gold);padding:8px 12px;border-radius:2px;font-size:11px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:999;font-family:'Audiowide',sans-serif;letter-spacing:.05em;line-height:1.6;white-space:nowrap;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+  .li{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text);cursor:default;}
+  .ld{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+  footer{text-align:center;padding:24px;font-family:'Audiowide',sans-serif;font-size:9px;letter-spacing:.15em;color:var(--dim);}
+  footer a{color:#E84040;font-weight:700;text-decoration:none;}
+
+  @media(max-width:700px){.row2,.row3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="gold-line"></div>
+  <h1>PLEXIQ · CODEBASE ANALYSIS</h1>
+  <p>v5.3.1 · CHICAGO EDITION · LANGUAGE COMPOSITION</p>
+</header>
+<div class="deco-sep"></div>
+
+<main>
+  <div class="row3">
+    <div class="stat card"><span class="stat-val">2,287</span><span class="stat-lbl">REAL LINES OF CODE</span></div>
+    <div class="stat card"><span class="stat-val">23</span><span class="stat-lbl">SOURCE FILES</span></div>
+    <div class="stat card"><span class="stat-val" style="color:#E84040">688</span><span class="stat-lbl">LARGEST FILE · PAGE.TSX</span></div>
+  </div>
+
+  <div class="row2">
+    <div class="card">
+      <div class="card-title">LANGUAGE COMPOSITION</div>
+      <svg id="donut" width="100%" height="260"></svg>
+      <div class="legend" id="dlegend"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">FILE SIZE WATERFALL (LINES)</div>
+      <svg id="bars" width="100%" height="340"></svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ARCHITECTURE MIND MAP — CLICK A NODE TO HIGHLIGHT CONNECTIONS</div>
+    <svg id="map" width="100%" height="480"></svg>
+  </div>
+</main>
+
+<footer>PLEXIQ v5.3.1 · <a href="https://resume.richknowles.com">RICH KNOWLES</a></footer>
+<div class="tip" id="tip"></div>
+
+<script>
+const LANGS=[
+  {n:"TypeScript/TSX",v:1141,c:"#3B82F6"},
+  {n:"CSS",            v:384, c:"#C9A84C"},
+  {n:"JavaScript",     v:297, c:"#E8C96C"},
+  {n:"TypeScript",     v:206, c:"#60A5FA"},
+  {n:"HTML",           v:132, c:"#8B7355"},
+  {n:"JSON/Config",    v:60,  c:"#4A7A8D"},
+  {n:"Markdown",       v:42,  c:"#6B5E3C"},
+  {n:"Config",         v:25,  c:"#5A6A4A"},
+];
+const FILES=[
+  {f:"app/page.tsx",              v:688, c:"#3B82F6"},
+  {f:"static/style.css (legacy)",v:358, c:"#C9A84C"},
+  {f:"static/app.js (legacy)",   v:297, c:"#E8C96C"},
+  {f:"threshold-slider.tsx",     v:261, c:"#3B82F6"},
+  {f:"static/index.html (legacy)",v:132,c:"#8B7355"},
+  {f:"library-stats.tsx",        v:103, c:"#3B82F6"},
+  {f:"api/analyze/route.ts",     v:79,  c:"#60A5FA"},
+  {f:"types/plexiq.ts",          v:61,  c:"#60A5FA"},
+  {f:"mustard-progress.tsx",     v:51,  c:"#3B82F6"},
+  {f:"app/layout.tsx",           v:38,  c:"#3B82F6"},
+  {f:"README.md",                v:36,  c:"#6B5E3C"},
+  {f:"api/libraries/route.ts",   v:26,  c:"#60A5FA"},
+  {f:"app/globals.css",          v:26,  c:"#C9A84C"},
+  {f:"api/delete/route.ts",      v:24,  c:"#60A5FA"},
+];
+const TOTAL=LANGS.reduce((a,d)=>a+d.v,0);
+
+const tip=document.getElementById("tip");
+function showTip(e,html){tip.innerHTML=html;tip.style.opacity=1;moveTip(e);}
+function moveTip(e){tip.style.left=(e.clientX+14)+"px";tip.style.top=(e.clientY-10)+"px";}
+function hideTip(){tip.style.opacity=0;}
+function ns(tag,attrs={}){const el=document.createElementNS("http://www.w3.org/2000/svg",tag);for(const[k,v]of Object.entries(attrs))el.setAttribute(k,v);return el;}
+
+// ── DONUT ───────────────────────────────────────────────────────────────────
+(function(){
+  const svg=document.getElementById("donut");
+  const W=svg.clientWidth||380, H=260;
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const cx=W/2, cy=H/2, R=Math.min(W,H)/2-18, ir=R*.56;
+
+  let ang=-Math.PI/2;
+  LANGS.forEach(d=>{
+    const sweep=d.v/TOTAL*Math.PI*2;
+    const a1=ang, a2=ang+sweep;
+    const lg=sweep>Math.PI;
+    const x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1);
+    const x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
+    const ix1=cx+ir*Math.cos(a1),iy1=cy+ir*Math.sin(a1);
+    const ix2=cx+ir*Math.cos(a2),iy2=cy+ir*Math.sin(a2);
+    const path=ns("path",{
+      d:`M${ix1},${iy1} L${x1},${y1} A${R},${R},0,${lg?1:0},1,${x2},${y2} L${ix2},${iy2} A${ir},${ir},0,${lg?1:0},0,${ix1},${iy1}Z`,
+      fill:d.c, stroke:"#0A0804","stroke-width":"2",style:"cursor:pointer;transition:opacity .15s"
+    });
+    const mid=a1+sweep/2;
+    const tipHtml=`<span style="color:${d.c}">${d.n}</span><br>${d.v} lines · ${(d.v/TOTAL*100).toFixed(1)}%`;
+    path.addEventListener("mouseover",e=>{path.style.opacity=".75";showTip(e,tipHtml);});
+    path.addEventListener("mousemove",moveTip);
+    path.addEventListener("mouseout",()=>{path.style.opacity="1";hideTip();});
+    svg.appendChild(path);
+    ang=a2;
+  });
+
+  // Center text
+  const t1=ns("text",{"text-anchor":"middle",x:cx,y:cy-6,"font-family":"Audiowide,sans-serif","font-size":"22","fill":"#C9A84C"});
+  t1.textContent=TOTAL.toLocaleString();
+  const t2=ns("text",{"text-anchor":"middle",x:cx,y:cy+14,"font-family":"Audiowide,sans-serif","font-size":"8","fill":"#4A3F28","letter-spacing":"2"});
+  t2.textContent="LINES";
+  svg.appendChild(t1); svg.appendChild(t2);
+
+  // Legend
+  const leg=document.getElementById("dlegend");
+  LANGS.forEach(d=>{
+    const item=document.createElement("div"); item.className="li";
+    item.innerHTML=`<div class="ld" style="background:${d.c}"></div>${d.n} <span style="color:#4A3F28;margin-left:3px">(${(d.v/TOTAL*100).toFixed(0)}%)</span>`;
+    leg.appendChild(item);
+  });
+})();
+
+// ── BAR CHART ───────────────────────────────────────────────────────────────
+(function(){
+  const svg=document.getElementById("bars");
+  const W=svg.clientWidth||480, H=340;
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const ml=170, mr=50, mt=8, mb=10;
+  const iW=W-ml-mr, iH=H-mt-mb;
+  const max=FILES[0].v;
+  const bh=Math.floor(iH/FILES.length);
+  const pad=Math.max(2,bh*.2);
+
+  FILES.forEach((d,i)=>{
+    const y=mt+i*bh;
+    const bw=Math.round(d.v/max*iW);
+
+    // Grid line
+    const gl=ns("line",{x1:ml,y1:y+bh/2,x2:W-mr,y2:y+bh/2,stroke:"#1A1408","stroke-width":"1"});
+    svg.appendChild(gl);
+
+    // Bar
+    const rect=ns("rect",{x:ml,y:y+pad/2,width:0,height:bh-pad,rx:"2",fill:d.c,style:"cursor:pointer;transition:fill .15s"});
+    rect.addEventListener("mouseover",e=>{rect.setAttribute("fill","#E8C96C");showTip(e,`<span style="color:${d.c}">${d.f}</span><br>${d.v} lines`);});
+    rect.addEventListener("mousemove",moveTip);
+    rect.addEventListener("mouseout",()=>{rect.setAttribute("fill",d.c);hideTip();});
+    svg.appendChild(rect);
+
+    // Animate width
+    let start=null;
+    (function anim(ts){
+      if(!start)start=ts;
+      const p=Math.min((ts-start-i*30)/500,1);
+      const ease=p<.5?2*p*p:(4-2*p)*p-1;
+      rect.setAttribute("width",Math.round(bw*Math.max(0,ease)));
+      if(p<1)requestAnimationFrame(anim);
+    })(0);
+    requestAnimationFrame(ts=>{start=null;});
+
+    // File label
+    const label=d.f.length>24?d.f.slice(0,23)+"…":d.f;
+    const lt=ns("text",{x:ml-5,y:y+bh/2+4,"text-anchor":"end","font-family":"Audiowide,sans-serif","font-size":"8",fill:d.c});
+    lt.textContent=label; svg.appendChild(lt);
+
+    // Count label
+    const ct=ns("text",{x:ml+bw+5,y:y+bh/2+4,"font-family":"Audiowide,sans-serif","font-size":"8",fill:"#4A3F28"});
+    ct.textContent=d.v+"L"; svg.appendChild(ct);
+    setTimeout(()=>{ct.setAttribute("x",ml+Math.round(d.v/max*iW)+5);},520+i*30);
+  });
+})();
+
+// ── MIND MAP ────────────────────────────────────────────────────────────────
+(function(){
+  const svg=document.getElementById("map");
+  const W=svg.clientWidth||900, H=480;
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+
+  const N={
+    root:    {l:"PLEXIQ",    s:"v5.3.1",   r:34, c:"#C9A84C", x:.50, y:.50},
+    fe:      {l:"FRONTEND",  s:"Next.js",  r:22, c:"#3B82F6", x:.22, y:.22},
+    api:     {l:"API ROUTES",s:"3 routes", r:22, c:"#60A5FA", x:.78, y:.22},
+    legacy:  {l:"LEGACY",    s:"Static v1",r:18, c:"#6B5E3C", x:.20, y:.80},
+    cfg:     {l:"CONFIG",    s:"Toolchain",r:16, c:"#4A7A8D", x:.80, y:.80},
+    page:    {l:"page.tsx",  s:"688L",     r:17, c:"#3B82F6", x:.06, y:.10},
+    slider:  {l:"slider",    s:"261L",     r:13, c:"#3B82F6", x:.22, y:.06},
+    libstat: {l:"lib-stats", s:"103L",     r:10, c:"#3B82F6", x:.36, y:.12},
+    prog:    {l:"progress",  s:"51L",      r:8,  c:"#3B82F6", x:.10, y:.36},
+    layout:  {l:"layout",    s:"38L",      r:7,  c:"#3B82F6", x:.36, y:.28},
+    analyze: {l:"analyze",   s:"79L",      r:12, c:"#60A5FA", x:.64, y:.08},
+    libs:    {l:"libraries", s:"26L",      r:8,  c:"#60A5FA", x:.80, y:.08},
+    del:     {l:"delete",    s:"24L",      r:7,  c:"#60A5FA", x:.92, y:.28},
+    types:   {l:"types.ts",  s:"61L",      r:10, c:"#60A5FA", x:.78, y:.38},
+    appjs:   {l:"app.js",    s:"297L",     r:13, c:"#E8C96C", x:.08, y:.70},
+    stcss:   {l:"style.css", s:"358L",     r:14, c:"#C9A84C", x:.20, y:.92},
+    idxhtml: {l:"index.html",s:"132L",     r:10, c:"#8B7355", x:.34, y:.80},
+    pkg:     {l:"pkg.json",  s:"26L",      r:8,  c:"#4A7A8D", x:.70, y:.86},
+    nxtcfg:  {l:"next.cfg",  s:"10L",      r:6,  c:"#4A7A8D", x:.86, y:.68},
+    gcss:    {l:"globals",   s:"26L",      r:7,  c:"#C9A84C", x:.88, y:.88},
+  };
+
+  const LINKS=[
+    ["root","fe"],["root","api"],["root","legacy"],["root","cfg"],
+    ["fe","page"],["fe","slider"],["fe","libstat"],["fe","prog"],["fe","layout"],
+    ["api","analyze"],["api","libs"],["api","del"],["api","types"],
+    ["legacy","appjs"],["legacy","stcss"],["legacy","idxhtml"],
+    ["cfg","pkg"],["cfg","nxtcfg"],["cfg","gcss"],
+  ];
+
+  // position nodes
+  Object.values(N).forEach(n=>{n.px=n.x*W; n.py=n.y*H;});
+
+  // draw links
+  const linkEls={};
+  LINKS.forEach(([a,b])=>{
+    const na=N[a],nb=N[b];
+    const line=ns("line",{x1:na.px,y1:na.py,x2:nb.px,y2:nb.py,stroke:nb.c+"44","stroke-width":"1.5"});
+    svg.appendChild(line);
+    linkEls[a+"_"+b]=line;
+  });
+
+  // draw nodes
+  let selected=null;
+  Object.entries(N).forEach(([id,n])=>{
+    const g=ns("g",{style:"cursor:pointer"});
+
+    const circle=ns("circle",{cx:n.px,cy:n.py,r:n.r,fill:n.c+"2A",stroke:n.c,"stroke-width":id==="root"?"2.5":"1.5"});
+    const t1=ns("text",{"text-anchor":"middle",x:n.px,y:n.py-(n.s?3:0),"font-family":"Audiowide,sans-serif","font-size":n.r>=22?"9":n.r>=13?"8":"7",fill:n.c});
+    t1.textContent=n.l;
+    const t2=ns("text",{"text-anchor":"middle",x:n.px,y:n.py+10,"font-family":"Audiowide,sans-serif","font-size":"7",fill:n.c+"88"});
+    if(n.s)t2.textContent=n.s;
+
+    g.appendChild(circle); g.appendChild(t1); if(n.s)g.appendChild(t2);
+
+    g.addEventListener("mouseover",e=>{
+      circle.setAttribute("r",n.r+4);
+      showTip(e,`<span style="color:${n.c}">${n.l}</span><br>${n.s||""}`);
+    });
+    g.addEventListener("mousemove",moveTip);
+    g.addEventListener("mouseout",()=>{circle.setAttribute("r",n.r);hideTip();});
+
+    g.addEventListener("click",()=>{
+      if(selected===id){
+        selected=null;
+        Object.values(N).forEach(nd=>nd._el&&nd._el.setAttribute("opacity","1"));
+        LINKS.forEach(([a,b])=>{linkEls[a+"_"+b].setAttribute("stroke",N[b].c+"44");linkEls[a+"_"+b].setAttribute("stroke-width","1.5");});
+      } else {
+        selected=id;
+        const conn=new Set([id]);
+        LINKS.forEach(([a,b])=>{if(a===id||b===id){conn.add(a);conn.add(b);}});
+        Object.entries(N).forEach(([nid,nd])=>nd._el&&nd._el.setAttribute("opacity",conn.has(nid)?"1":"0.15"));
+        LINKS.forEach(([a,b])=>{
+          const active=a===id||b===id;
+          linkEls[a+"_"+b].setAttribute("stroke",active?N[b].c+"cc":N[b].c+"0A");
+          linkEls[a+"_"+b].setAttribute("stroke-width",active?"2.5":"0.5");
+        });
+      }
+    });
+
+    n._el=circle;
+    svg.appendChild(g);
+  });
+
+  // Pulse root
+  let pr=34,dir=1;
+  setInterval(()=>{
+    pr+=dir*.08; if(pr>37)dir=-1; if(pr<34)dir=1;
+    N.root._el&&N.root._el.setAttribute("r",pr.toFixed(2));
+  },16);
+})();
+</script>
+</body>
+</html>
