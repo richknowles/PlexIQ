@@ -16,9 +16,6 @@ PlexIQ analyzes your Plex library using multi-factor scoring (play count, rating
 > You will be asked **three** times before anything gets deleted. The third time, you'll enter your deletion password. After that — it's gone. `OUR SOFTWARE WILL NOT BACK UP YOUR DATA EVER.` We love you. Be careful out there. ☠️
 
 
-<p align="center">
-  <img src="rainbow_madness.png" alt="rainbow_madness.png" width="900" />
-</p>
 ---
 
 ## GET YOUR REDHOTS! 🌭🌭🌭
