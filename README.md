@@ -1,7 +1,7 @@
 # PlexIQ v5.3.1 — The Chicago Edition 🌭
 
 <p align="center">
-  <img src="web/plexiq-demo.gif" alt="PlexIQ v5.3.1 demo" width="900" /img>
+  <img src="plexiq-demo.gif" alt="PlexIQ v5.3.1 demo" width="900" />
 </p>
 
 
