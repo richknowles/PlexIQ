@@ -63,15 +63,28 @@ const sliderCSS = `
 
   .grab-indicator {
     position: absolute;
-    bottom: -4px;
+    bottom: -11px;
     left: 50%;
     transform: translateX(-50%);
-    width: 28px;
-    height: 12px;
-    border: 1.5px solid #C9A84C88;
-    border-radius: 6px;
-    background: linear-gradient(180deg, #2A2318 0%, #1A1408 100%);
-    box-shadow: 0 0 8px #C9A84C33;
+    width: 45px;
+    height: 19px;
+    border-radius: 50%;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0.055) 0px, rgba(255,255,255,0.055) 1px,
+        transparent 1px, transparent 4px
+      ),
+      radial-gradient(ellipse at 36% 32%,
+        #D8C898 0%, #B09468 22%, #7A6040 50%, #4A3820 75%, #2E2010 100%
+      );
+    border: 1.5px solid #C9A84C;
+    box-shadow:
+      0 4px 12px rgba(0,0,0,0.8),
+      inset 0 1px 0 rgba(255,240,190,0.32),
+      inset 0 -2px 0 rgba(0,0,0,0.5),
+      0 0 0 1px rgba(0,0,0,0.4),
+      0 0 10px #C9A84C22;
   }
 
   .deco-line {
