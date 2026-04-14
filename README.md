@@ -1,7 +1,7 @@
 # PlexIQ v5.3.1 — The Chicago Edition 🌭
 
 <p align="center">
-  <img src="plexiq-demo.gif" alt="PlexIQ v5.3 demo" width="700" />
+  <img src="plexiq-demo.gif" alt="PlexIQ v5.3 demo" width="900" />
 </p>
 
 **Smart Plex Media Library Management. One slider. No nonsense. Just HOTDOGS.**
