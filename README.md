@@ -16,7 +16,8 @@ All deleted data is **unrecoverable**! If you have been wise enough and able to 
 
 ---
 
-## ✨ Features
+## GET YOUR REDHOTS! 🌭🌭🌭
+                            ## GET YOUR REDHOTS OVER HERE! ##
 
 ### Core Capabilities
 - 📊 **Intelligent Analysis** - Multi-factor scoring system considering play count, ratings, file size, age, and quality. all data will be **algorithmically** weighted against IMDb, tvdb and Rotten Tomatoes vs play count and library freshness. Please be sure to perform a fresh scan before deleting to be sure you have the most current weighting
@@ -36,7 +37,7 @@ All deleted data is **unrecoverable**! If you have been wise enough and able to 
 
 ---
 
-## 🚀 Quick Start
+## 🌭 Quick Start
 
 ### Prerequisites
 - Python 3.8 or higher
@@ -243,7 +244,7 @@ PlexIQ uses a weighted multi-factor scoring system (0.0-1.0, where 1.0 = highest
 
 ---
 
-## 🔒 Safety Features
+## 🌭🌭🌭 Hotdogs are a risky business!
 
 ### Dry-Run First (Rule #1)
 ```bash
@@ -348,21 +349,16 @@ Please contact Rich at richitwerks.net if you are interested in licensing this s
 ## ⚠️ Important Notes
 
 ### Deletion Context
-PlexIQ focuses on **Plex media files** (movies/shows). It does NOT delete:
+PlexIQ DELETES YOUR **media files**. It does NOT delete:
 - System files
 - Plex database
 - User data
 - Configuration files
 
-However, it CAN optionally manage:
-- Media cache files
-- Thumbnails
-- Transcoding temp files
-
-### Backup & Recovery
-- Backups contain metadata only (not media files)
+### LOG FILES
+- OUR SOFTWARE WILL NOT BACK UP YOUR DATA EVER!
 - Deleted media files are handled by Plex's built-in trash
-- Review all recommendations before executing
+- Review all recommendations before executing - three strikes and you're out!!! ❌❌❌ 😵
 - Test with dry-run mode first
 
 ---
@@ -373,7 +369,7 @@ This project is licensed under the MIT License - see LICENSE file for details.
 
 ---
 
-## 👤 Author
+## 👤 TEAM HOTDOG! 🌭 💙 🌭
 
 **Rich Knowles**
 Developer | Cybersecurity Engineer | Musician
@@ -399,5 +395,5 @@ The Great & Beautiful
 - **Discussions**: [GitHub Discussions](https://github.com/richknowles/PlexIQ/discussions)
 
 ---
-
+☠️
 **Remember: Always test with `--dry-run` first! 🛡️**
