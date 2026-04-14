@@ -1,10 +1,28 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import ThresholdSlider from "@/components/threshold-slider";
 import LibraryStatsDisplay from "@/components/library-stats";
 import MustardProgress from "@/components/mustard-progress";
 import { LibraryStats } from "@/types/plexiq";
+
+interface PlexMovie {
+  id:        number;
+  ratingKey: string;
+  title:     string;
+  year?:     number;
+  score:     number;
+  size:      string;
+  sizeBytes: number;
+  rating:    number;
+  plays:     number;
+}
+
+interface PlexLibrary {
+  key:   string;
+  title: string;
+  type:  string;
+}
 
 const CSS = `
   @keyframes decoFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
@@ -120,7 +138,7 @@ const CSS = `
   }
   .marquee-panel {
     background:#080600; border:3px solid #1A1200; position:relative;
-    padding:44px 20px 20px; min-height:140px;
+    padding:52px 24px 24px; min-height:140px;
   }
   .bulb {
     position:absolute; width:10px; height:10px; border-radius:50%;
@@ -144,30 +162,16 @@ const CSS = `
     white-space:nowrap;
   }
   .rm-btn:hover { border-color:#C05050; color:#C05050; }
-  a.resume-link { color:#C9A84C; text-decoration:none; transition:color 0.2s, text-shadow 0.2s; }
-  a.resume-link:hover { color:#E8C96C; text-shadow:0 0 10px #C9A84C88; }
+
+  /* ── Footer ── demure dark red watermark, name slightly warmer */
+  a.resume-link {
+    color:#5A2222; font-weight:700; text-decoration:none;
+    transition:color 0.2s, text-shadow 0.2s;
+  }
+  a.resume-link:hover { color:#8B3A3A; text-shadow:0 0 8px #5A222244; }
 `;
 
-// Higher score = more deletable. Filter: score >= (1 - threshold)
-const ALL_MOVIES = [
-  { id:1,  title:"Blade Runner 2049",          score:0.92, size:"18.4 GB", rating:8.0, plays:0 },
-  { id:2,  title:"The Lighthouse",             score:0.88, size:"12.1 GB", rating:7.5, plays:0 },
-  { id:3,  title:"Midsommar",                  score:0.83, size:"9.8 GB",  rating:7.1, plays:1 },
-  { id:4,  title:"Enemy",                      score:0.78, size:"7.2 GB",  rating:6.9, plays:0 },
-  { id:5,  title:"Annihilation",               score:0.73, size:"14.3 GB", rating:6.8, plays:0 },
-  { id:6,  title:"Hereditary",                 score:0.68, size:"8.9 GB",  rating:7.3, plays:2 },
-  { id:7,  title:"Under the Silver Lake",      score:0.62, size:"6.4 GB",  rating:6.2, plays:0 },
-  { id:8,  title:"mother!",                    score:0.57, size:"11.2 GB", rating:6.7, plays:1 },
-  { id:9,  title:"The House That Jack Built",  score:0.51, size:"10.5 GB", rating:6.8, plays:0 },
-  { id:10, title:"High Life",                  score:0.46, size:"7.7 GB",  rating:6.4, plays:0 },
-  { id:11, title:"Suspiria (2018)",            score:0.41, size:"15.2 GB", rating:6.8, plays:0 },
-  { id:12, title:"Border",                     score:0.37, size:"5.9 GB",  rating:7.1, plays:1 },
-  { id:13, title:"Cold War",                   score:0.33, size:"8.3 GB",  rating:7.6, plays:0 },
-  { id:14, title:"The Favourite",              score:0.28, size:"12.8 GB", rating:7.6, plays:1 },
-  { id:15, title:"First Reformed",             score:0.24, size:"6.1 GB",  rating:7.5, plays:0 },
-];
-
-const PAGE_SIZE = 7;
+const PAGE_SIZE  = 7;
 const BULB_COUNT = { top:12, bottom:12, left:5, right:5 };
 
 function MarqueeBulbs() {
@@ -189,28 +193,47 @@ function MarqueeBulbs() {
 }
 
 export default function Dashboard() {
-  const [threshold, setThreshold]         = useState(0.5);
-  const [selectedLibrary, setSelectedLibrary] = useState("");
-  const [isAnalyzing, setIsAnalyzing]     = useState(false);
-  const [isDryRun, setIsDryRun]           = useState(true);
-  const [progress, setProgress]           = useState({ current:0, total:0, stage:"", message:"" });
-  const [stats, setStats]                 = useState<LibraryStats | null>(null);
-  const [activeTab, setActiveTab]         = useState<"analyze"|"saved">("analyze");
-  const [untouchables, setUntouchables]   = useState<Set<number>>(new Set());
-  const [fadingIds, setFadingIds]         = useState<Set<number>>(new Set());
-  const [selectedIds, setSelectedIds]     = useState<Set<number>>(new Set());
-  const [visibleCount, setVisibleCount]   = useState(PAGE_SIZE);
-  const [confirmStep, setConfirmStep]     = useState<0|1|2|3>(0);
-  const [password, setPassword]           = useState("");
-  const [pwdError, setPwdError]           = useState(false);
-  const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [threshold,        setThreshold]        = useState(0.5);
+  const [libraries,        setLibraries]        = useState<PlexLibrary[]>([]);
+  const [selectedSectionId, setSelectedSectionId] = useState("");
+  const [isAnalyzing,      setIsAnalyzing]      = useState(false);
+  const [isDryRun,         setIsDryRun]         = useState(true);
+  const [progress,         setProgress]         = useState({ current:0, total:0, stage:"", message:"" });
+  const [stats,            setStats]            = useState<LibraryStats | null>(null);
+  const [movies,           setMovies]           = useState<PlexMovie[]>([]);
+  const [activeTab,        setActiveTab]        = useState<"analyze"|"saved">("analyze");
+  const [untouchables,     setUntouchables]     = useState<Set<number>>(new Set());
+  const [fadingIds,        setFadingIds]        = useState<Set<number>>(new Set());
+  const [selectedIds,      setSelectedIds]      = useState<Set<number>>(new Set());
+  const [visibleCount,     setVisibleCount]     = useState(PAGE_SIZE);
+  const [confirmStep,      setConfirmStep]      = useState<0|1|2|3>(0);
+  const [password,         setPassword]         = useState("");
+  const [pwdError,         setPwdError]         = useState(false);
+  const [deleteSuccess,    setDeleteSuccess]    = useState(false);
+  const [libError,         setLibError]         = useState("");
 
-  const libraries = ["Movies", "TV Shows", "Music", "4K Movies"];
+  // Fetch Plex library list on mount
+  useEffect(() => {
+    fetch("/api/libraries")
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setLibraries(data);
+        } else {
+          setLibError(data.error || "Cannot reach Plex");
+        }
+      })
+      .catch(() => setLibError("Cannot reach Plex server"));
+  }, []);
 
-  const filteredMovies = ALL_MOVIES.filter(m => m.score >= (1 - threshold) && !fadingIds.has(m.id) && !untouchables.has(m.id));
-  const visibleFiltered = filteredMovies.slice(0, visibleCount);
-  const hasMore = filteredMovies.length > visibleCount;
-  const untouchableItems = ALL_MOVIES.filter(m => untouchables.has(m.id));
+  const selectedLibraryTitle = libraries.find(l => l.key === selectedSectionId)?.title || "";
+
+  const filteredMovies = movies.filter(
+    m => m.score >= (1 - threshold) && !fadingIds.has(m.id) && !untouchables.has(m.id)
+  );
+  const visibleFiltered  = filteredMovies.slice(0, visibleCount);
+  const hasMore          = filteredMovies.length > visibleCount;
+  const untouchableItems = movies.filter(m => untouchables.has(m.id));
 
   const toggleStar = (id: number) => {
     if (untouchables.has(id)) return;
@@ -239,24 +262,48 @@ export default function Dashboard() {
   };
 
   const handleAnalyze = async () => {
-    if (!selectedLibrary) { alert("Select a library first"); return; }
+    if (!selectedSectionId) { alert("Select a library first"); return; }
     setIsAnalyzing(true);
     setVisibleCount(PAGE_SIZE);
+    setMovies([]);
+
     const stages = [
-      { stage:"connecting", message:"Connecting to Plex...",          duration:700  },
-      { stage:"collecting", message:"Pulling metadata...",            duration:1400 },
-      { stage:"enriching",  message:"Fetching IMDb ratings...",       duration:1100 },
-      { stage:"enriching",  message:"Fetching TMDb data...",          duration:1000 },
-      { stage:"scoring",    message:"Calculating deletion scores...", duration:1400 },
-      { stage:"complete",   message:"Analysis complete.",             duration:300  },
+      { stage:"connecting", message:"Connecting to Plex...",          pct:10, duration:700  },
+      { stage:"collecting", message:"Pulling metadata...",            pct:35, duration:900  },
+      { stage:"enriching",  message:"Fetching ratings & play data...", pct:65, duration:900  },
+      { stage:"scoring",    message:"Calculating deletion scores...",  pct:88, duration:600  },
     ];
-    let current = 0;
-    for (const { stage, message, duration } of stages) {
-      setProgress({ current, total:100, stage, message });
-      await new Promise(r => setTimeout(r, duration));
-      current += Math.floor(100 / stages.length);
+
+    // Run progress animation and API fetch in parallel
+    const progressAnim = (async () => {
+      for (const { stage, message, pct, duration } of stages) {
+        setProgress({ current: pct, total: 100, stage, message });
+        await new Promise(r => setTimeout(r, duration));
+      }
+    })();
+
+    const fetchResult = fetch(`/api/analyze?sectionId=${selectedSectionId}`)
+      .then(r => r.json());
+
+    const [, data] = await Promise.all([progressAnim, fetchResult]);
+
+    if (data.error) {
+      alert(`Analysis failed: ${data.error}`);
+      setIsAnalyzing(false);
+      return;
     }
-    setStats({ name:selectedLibrary, itemCount:1247, totalSize:5_432_109_876_543, avgScore:0.65, deletionCandidates:342, potentialSpaceSaved:1_234_567_890_123 });
+
+    setProgress({ current:100, total:100, stage:"complete", message:"Analysis complete." });
+    await new Promise(r => setTimeout(r, 300));
+
+    const fetchedMovies: PlexMovie[] = data.movies;
+    const candidates = fetchedMovies.filter(m => m.score >= (1 - threshold) && !untouchables.has(m.id));
+    setMovies(fetchedMovies);
+    setStats({
+      ...data.stats,
+      deletionCandidates:  candidates.length,
+      potentialSpaceSaved: candidates.reduce((acc, m) => acc + m.sizeBytes, 0),
+    });
     setIsAnalyzing(false);
     setActiveTab("analyze");
   };
@@ -266,11 +313,32 @@ export default function Dashboard() {
     setConfirmStep(1);
   };
 
-  const handleConfirmNext = () => {
+  const handleConfirmNext = async () => {
     if (confirmStep === 2) { setConfirmStep(3); return; }
     if (confirmStep === 3) {
       if (!password.trim()) { setPwdError(true); return; }
       setPwdError(false);
+
+      if (!isDryRun) {
+        // ── Real Plex deletion ──
+        const toDelete = selectedIds.size > 0
+          ? movies.filter(m => selectedIds.has(m.id))
+          : filteredMovies;
+        const ratingKeys = toDelete.map(m => m.ratingKey);
+        try {
+          await fetch("/api/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ratingKeys }),
+          });
+          const deletedIds = new Set(toDelete.map(m => m.id));
+          setMovies(prev => prev.filter(m => !deletedIds.has(m.id)));
+          setSelectedIds(new Set());
+        } catch {
+          console.error("Delete API failed");
+        }
+      }
+
       setConfirmStep(0);
       setPassword("");
       setDeleteSuccess(true);
@@ -282,7 +350,7 @@ export default function Dashboard() {
 
   const cancelConfirm = () => { setConfirmStep(0); setPassword(""); setPwdError(false); };
 
-  const deleteTargets = selectedIds.size > 0 ? selectedIds.size : filteredMovies.length;
+  const deleteTargets  = selectedIds.size > 0 ? selectedIds.size : filteredMovies.length;
   const showPoliceLights = !isDryRun && confirmStep > 0;
 
   const ScoreCell = ({ score }: { score: number }) => {
@@ -297,15 +365,15 @@ export default function Dashboard() {
       {/* ── HEADER ── */}
       <header style={{ borderBottom:"1px solid #2A2318", background:"#0D0A04", position:"sticky", top:0, zIndex:50 }}>
         <div style={{ height:"2px", background:"linear-gradient(90deg,transparent,#C9A84C,#E8C96C,#C9A84C,transparent)" }} />
-        <div style={{ maxWidth:"1280px", margin:"0 auto", padding:"16px 24px" }}>
+        <div style={{ maxWidth:"1280px", margin:"0 auto", padding:"8px 24px" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div style={{ display:"flex", alignItems:"center", gap:"16px" }}>
-              <div style={{ fontSize:"42px", lineHeight:1, userSelect:"none" }}>🌭</div>
+              <div style={{ fontSize:"62px", lineHeight:1, userSelect:"none" }}>🌭</div>
               <div>
-                <h1 style={{ fontFamily:"var(--font-audiowide)", fontSize:"28px", letterSpacing:"0.06em", background:"linear-gradient(135deg,#E8C96C 0%,#C9A84C 50%,#8B6914 100%)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", margin:0 }}>
+                <h1 style={{ fontFamily:"var(--font-audiowide)", fontSize:"38px", letterSpacing:"0.06em", background:"linear-gradient(135deg,#E8C96C 0%,#C9A84C 50%,#8B6914 100%)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", margin:0 }}>
                   PLEXIQ
                 </h1>
-                <p style={{ margin:0, fontSize:"9px", letterSpacing:"0.25em", color:"#4A3F28", fontFamily:"var(--font-audiowide)", marginTop:"2px" }}>
+                <p style={{ margin:0, fontSize:"12px", letterSpacing:"0.25em", color:"#4A3F28", fontFamily:"var(--font-audiowide)", marginTop:"2px" }}>
                   v5.3.1 · CHICAGO EDITION
                 </p>
               </div>
@@ -322,8 +390,10 @@ export default function Dashboard() {
               <div style={{ textAlign:"right" }}>
                 <div style={{ fontSize:"9px", color:"#4A3F28", fontFamily:"var(--font-audiowide)", letterSpacing:"0.1em" }}>PLEX SERVER</div>
                 <div style={{ display:"flex", alignItems:"center", gap:"6px", marginTop:"4px" }}>
-                  <div style={{ width:"7px", height:"7px", borderRadius:"50%", background:"#3A7A3A", boxShadow:"0 0 6px #3A7A3A" }} />
-                  <span style={{ fontSize:"11px", color:"#3A7A3A", fontFamily:"var(--font-audiowide)", letterSpacing:"0.05em" }}>CONNECTED</span>
+                  <div style={{ width:"7px", height:"7px", borderRadius:"50%", background: libError ? "#7A3A3A" : "#3A7A3A", boxShadow: libError ? "0 0 6px #7A3A3A" : "0 0 6px #3A7A3A" }} />
+                  <span style={{ fontSize:"11px", color: libError ? "#7A3A3A" : "#3A7A3A", fontFamily:"var(--font-audiowide)", letterSpacing:"0.05em" }}>
+                    {libError ? "OFFLINE" : "CONNECTED"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -332,9 +402,9 @@ export default function Dashboard() {
         <div className="deco-sep" />
       </header>
 
-      {/* ── POLICE LIGHTS BAR ── */}
+      {/* ── POLICE LIGHTS BAR — fixed, above modal ── */}
       {showPoliceLights && (
-        <div className="police-bar">
+        <div className="police-bar" style={{ position:"fixed", top:0, left:0, right:0, zIndex:300 }}>
           <div className="dome-wrap dome-l"><div className="dome-inner" /></div>
           <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.2em", color:"#CC0000", textShadow:"0 0 12px #CC0000" }}>
             ⚠ LIVE DELETE — IRREVERSIBLE ⚠
@@ -353,7 +423,7 @@ export default function Dashboard() {
       {/* ── DELETE SUCCESS ── */}
       {deleteSuccess && (
         <div style={{ background:"#0A2A0A", borderBottom:"1px solid #3A7A3A55", padding:"10px 24px", textAlign:"center", fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.15em", color:"#3A7A3A" }}>
-          ✓ DELETION EXECUTED — {deleteTargets} FILES REMOVED
+          ✓ {isDryRun ? "DRY RUN COMPLETE" : `DELETION EXECUTED — ${deleteTargets} FILE${deleteTargets !== 1 ? "S" : ""} REMOVED`}
         </div>
       )}
 
@@ -366,11 +436,23 @@ export default function Dashboard() {
 
             <div className="deco-card" style={{ padding:"20px" }}>
               <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.2em", color:"#4A3F28", marginBottom:"12px" }}>SELECT LIBRARY</div>
-              <select value={selectedLibrary} onChange={e => setSelectedLibrary(e.target.value)} disabled={isAnalyzing}
-                style={{ width:"100%", background:"#0D0A04", border:"1px solid #2A2318", color:"#C8B99A", padding:"10px 14px", fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.08em", cursor:"pointer", outline:"none" }}>
-                <option value="">CHOOSE LIBRARY...</option>
-                {libraries.map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}
-              </select>
+              {libError ? (
+                <div style={{ color:"#7A3A3A", fontSize:"11px", fontFamily:"var(--font-audiowide)", letterSpacing:"0.08em" }}>
+                  ⚠ {libError}
+                </div>
+              ) : (
+                <select
+                  value={selectedSectionId}
+                  onChange={e => setSelectedSectionId(e.target.value)}
+                  disabled={isAnalyzing}
+                  style={{ width:"100%", background:"#0D0A04", border:"1px solid #2A2318", color:"#C8B99A", padding:"10px 14px", fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.08em", cursor:"pointer", outline:"none" }}
+                >
+                  <option value="">CHOOSE LIBRARY...</option>
+                  {libraries.map(l => (
+                    <option key={l.key} value={l.key}>{l.title.toUpperCase()}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="deco-card" style={{ padding:"20px" }}>
@@ -378,20 +460,23 @@ export default function Dashboard() {
             </div>
 
             <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-              <button className="u-btn primary" onClick={handleAnalyze} disabled={isAnalyzing || !selectedLibrary}>
+              <button className="u-btn primary" onClick={handleAnalyze} disabled={isAnalyzing || !selectedSectionId}>
                 {isAnalyzing ? "ANALYZING..." : "🔍 ANALYZE LIBRARY"}
               </button>
               <button className="u-btn" onClick={() => setActiveTab("analyze")} disabled={!stats}>
-                DELETION CANDIDATES ({stats ? filteredMovies.length : "—"})
+                THE CUT LIST ({stats ? filteredMovies.length : "—"})
               </button>
               <button className="u-btn" onClick={() => setActiveTab("saved")}
                 style={{ borderColor:untouchables.size > 0 ? "#C9A84C88" : undefined, color:untouchables.size > 0 ? "#FFE066" : undefined }}>
                 ★ THE UNTOUCHABLES ({untouchables.size})
               </button>
-              <button className={"u-btn danger" + (!isDryRun ? " live" : "")}
-                disabled={!stats || isAnalyzing} onClick={handleDeleteClick}>
+              <button
+                className={"u-btn danger" + (!isDryRun ? " live" : "")}
+                disabled={!stats || isAnalyzing}
+                onClick={handleDeleteClick}
+              >
                 {isDryRun
-                  ? `🌭 DELETE CANDIDATES (DRY RUN)`
+                  ? `🌭 CUT LIST (DRY RUN)`
                   : `🗑️ DELETE ${selectedIds.size > 0 ? selectedIds.size : filteredMovies.length} FILES — LIVE`}
               </button>
             </div>
@@ -460,12 +545,12 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* ── CANDIDATES TABLE ── */}
+            {/* ── THE CUT LIST TABLE ── */}
             {stats && !isAnalyzing && activeTab === "analyze" && (
               <div className="deco-card" style={{ padding:0, overflow:"hidden" }}>
                 <div style={{ display:"flex", borderBottom:"1px solid #2A2318", padding:"0 16px" }}>
                   <button className={"tab-btn active"}>
-                    CANDIDATES ({filteredMovies.length})
+                    THE CUT LIST ({filteredMovies.length})
                     {selectedIds.size > 0 && <span style={{ marginLeft:"8px", color:"#C9A84C", fontSize:"9px" }}>[{selectedIds.size} SELECTED]</span>}
                   </button>
                 </div>
@@ -496,10 +581,10 @@ export default function Dashboard() {
                               {untouchables.has(m.id) ? "⭐" : "☆"}
                             </button>
                           </td>
-                          <td style={{ padding:"10px 8px", color:"#C8B99A", fontSize:"13px" }}>{m.title}</td>
+                          <td style={{ padding:"10px 8px", color:"#C8B99A", fontSize:"13px" }}>{m.title}{m.year ? <span style={{ color:"#4A3F28", fontSize:"11px", marginLeft:"6px" }}>({m.year})</span> : null}</td>
                           <td style={{ padding:"10px 8px" }}><ScoreCell score={m.score} /></td>
                           <td style={{ padding:"10px 8px", color:"#6B5E3C", fontSize:"12px" }}>{m.size}</td>
-                          <td style={{ padding:"10px 8px", color:"#6B5E3C", fontSize:"12px" }}>{m.rating}</td>
+                          <td style={{ padding:"10px 8px", color:"#6B5E3C", fontSize:"12px" }}>{m.rating || "—"}</td>
                           <td style={{ padding:"10px 8px", color:"#4A3F28", fontSize:"12px" }}>{m.plays}</td>
                         </tr>
                       ))}
@@ -523,13 +608,13 @@ export default function Dashboard() {
       <div className="deco-sep" style={{ marginTop:"40px" }} />
       <footer style={{ padding:"16px 24px", maxWidth:"1280px", margin:"0 auto" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.15em", color:"#2A2318" }}>
+          <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.15em", color:"#3A1515" }}>
             PLEXIQ v5.3.1 ·{" "}
             <a href="https://resume.richknowles.com" target="_blank" rel="noopener noreferrer" className="resume-link">RICH KNOWLES</a>
           </div>
           <div style={{ display:"flex", gap:"20px" }}>
             {["GITHUB", "DOCS"].map(l => (
-              <span key={l} style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.15em", color:"#2A2318", cursor:"pointer" }}>{l}</span>
+              <span key={l} style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.15em", color:"#3A1515", cursor:"pointer" }}>{l}</span>
             ))}
           </div>
         </div>
@@ -539,7 +624,6 @@ export default function Dashboard() {
       {confirmStep > 0 && (
         <div className="modal-overlay" onClick={cancelConfirm}>
           <div className="modal-box" onClick={e => e.stopPropagation()}>
-            {/* Step indicator */}
             <div style={{ display:"flex", gap:"6px", marginBottom:"24px" }}>
               {[1,2,3].map(s => (
                 <div key={s} style={{ height:"3px", flex:1, borderRadius:"2px", background:confirmStep >= s ? "#C9A84C" : "#2A2318", transition:"background 0.3s" }} />
@@ -550,7 +634,7 @@ export default function Dashboard() {
               <>
                 <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"13px", letterSpacing:"0.15em", color:"#C9A84C", marginBottom:"16px" }}>CONFIRM DELETION — 1 OF 3</div>
                 <p style={{ color:"#C8B99A", fontSize:"13px", lineHeight:1.7, marginBottom:"24px" }}>
-                  You are about to delete <strong style={{ color:"#C9A84C" }}>{deleteTargets} file{deleteTargets !== 1 ? "s" : ""}</strong> from <strong style={{ color:"#C9A84C" }}>{selectedLibrary || "your library"}</strong>.
+                  You are about to delete <strong style={{ color:"#C9A84C" }}>{deleteTargets} file{deleteTargets !== 1 ? "s" : ""}</strong> from <strong style={{ color:"#C9A84C" }}>{selectedLibraryTitle || "your library"}</strong>.
                   {isDryRun ? " (DRY RUN — nothing will actually be deleted.)" : ""}
                 </p>
               </>
