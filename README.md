@@ -4,6 +4,9 @@
   <img src="web/plexiq-demo.gif" alt="PlexIQ v5.3.1 demo" width="900" />
 </p>
 
+
+---
+
 **Smart Plex Media Library Management. One slider. No nonsense. Just HOTDOGS.**
 
 PlexIQ analyzes your Plex library using multi-factor scoring (play count, ratings, file size) and surfaces deletion candidates through a cinematic 1930s Chicago noir interface. Built with *The Untouchables* — but even some of them had to die.
