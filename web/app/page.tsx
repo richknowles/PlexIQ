@@ -165,10 +165,10 @@ const CSS = `
 
   /* ── Footer ── demure dark red watermark, name slightly warmer */
   a.resume-link {
-    color:#5A2222; font-weight:700; text-decoration:none;
+    color:#E84040; font-weight:700; text-decoration:none;
     transition:color 0.2s, text-shadow 0.2s;
   }
-  a.resume-link:hover { color:#8B3A3A; text-shadow:0 0 8px #5A222244; }
+  a.resume-link:hover { color:#FF6868; text-shadow:0 0 10px #E8404066; }
 `;
 
 const PAGE_SIZE  = 7;
@@ -212,8 +212,9 @@ export default function Dashboard() {
   const [deleteSuccess,    setDeleteSuccess]    = useState(false);
   const [libError,         setLibError]         = useState("");
 
-  // Fetch Plex library list on mount
-  useEffect(() => {
+  // Fetch Plex library list — callable on mount AND on retry
+  const fetchLibraries = () => {
+    setLibError("");
     fetch("/api/libraries")
       .then(r => r.json())
       .then(data => {
@@ -224,7 +225,9 @@ export default function Dashboard() {
         }
       })
       .catch(() => setLibError("Cannot reach Plex server"));
-  }, []);
+  };
+
+  useEffect(() => { fetchLibraries(); }, []);
 
   const selectedLibraryTitle = libraries.find(l => l.key === selectedSectionId)?.title || "";
 
@@ -437,8 +440,16 @@ export default function Dashboard() {
             <div className="deco-card" style={{ padding:"20px" }}>
               <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.2em", color:"#4A3F28", marginBottom:"12px" }}>SELECT LIBRARY</div>
               {libError ? (
-                <div style={{ color:"#7A3A3A", fontSize:"11px", fontFamily:"var(--font-audiowide)", letterSpacing:"0.08em" }}>
-                  ⚠ {libError}
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:"8px" }}>
+                  <div style={{ color:"#7A3A3A", fontSize:"11px", fontFamily:"var(--font-audiowide)", letterSpacing:"0.08em" }}>
+                    ⚠ {libError}
+                  </div>
+                  <button
+                    onClick={fetchLibraries}
+                    style={{ background:"none", border:"1px solid #4A2020", color:"#8A4040", fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.1em", padding:"4px 8px", cursor:"pointer", borderRadius:"2px", whiteSpace:"nowrap", flexShrink:0 }}
+                    onMouseEnter={e => { const b = e.currentTarget; b.style.borderColor="#C9A84C"; b.style.color="#C9A84C"; }}
+                    onMouseLeave={e => { const b = e.currentTarget; b.style.borderColor="#4A2020"; b.style.color="#8A4040"; }}
+                  >↺ RETRY</button>
                 </div>
               ) : (
                 <select
@@ -608,13 +619,13 @@ export default function Dashboard() {
       <div className="deco-sep" style={{ marginTop:"40px" }} />
       <footer style={{ padding:"16px 24px", maxWidth:"1280px", margin:"0 auto" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.15em", color:"#3A1515" }}>
+          <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.15em", color:"#E84040" }}>
             PLEXIQ v5.3.1 ·{" "}
             <a href="https://resume.richknowles.com" target="_blank" rel="noopener noreferrer" className="resume-link">RICH KNOWLES</a>
           </div>
           <div style={{ display:"flex", gap:"20px" }}>
             {["GITHUB", "DOCS"].map(l => (
-              <span key={l} style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.15em", color:"#3A1515", cursor:"pointer" }}>{l}</span>
+              <span key={l} style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.15em", color:"#E84040", cursor:"pointer" }}>{l}</span>
             ))}
           </div>
         </div>
