@@ -1,31 +1,38 @@
-# PlexIQ v5.3 — The Chicago Edition 🌭
+# PlexIQ v5.3.1 — The Chicago Edition 🌭
 
 <p align="center">
   <img src="plexiq-demo.gif" alt="PlexIQ v5.3 demo" width="700" />
 </p>
 
-**Smart Plex Media Library Management. One slider. No nonsense. You decide what stays.**
+**Smart Plex Media Library Management. One slider. No nonsense. Just HOTDOGS.**
 
-PlexIQ analyzes your Plex library using multi-factor scoring (play count, ratings, file size, age, quality) and surfaces deletion candidates through a cinematic 1930s Chicago noir interface. Built with safety-first design — dry-run mode by default, ratings ≥8.0 always protected.
+PlexIQ analyzes your Plex library using multi-factor scoring (play count, ratings, file size, age, quality) and surfaces deletion candidates through a cinematic 1930s Chicago noir interface. Built with "The Untouchables", but even some of them had to die...
+
+# We are NOT responsible for your data loss. #
+
+You will be asked **three** times if you want to delete something or some things. The third time you will be asked for your deletion password.
+
+All deleted data is **unrecoverable**! If you have been wise enough and able to accommodate the storage requirements of trying to back up all your movies, then good for you! You have done what most have not! We certainly will make a best case effort to help you if you need assistance. please reach out to: support@itwerks.net
 
 ---
 
 ## ✨ Features
 
 ### Core Capabilities
-- 📊 **Intelligent Analysis** - Multi-factor scoring system considering play count, ratings, file size, age, and quality
-- 🔍 **Metadata Enrichment** - Integrates IMDb, TMDb, and Rotten Tomatoes ratings
-- 🛡️ **Safety First** - Dry-run mode by default; explicit confirmation required for deletion
-- 💾 **Automatic Backups** - All operations create audit trails and backups
+- 📊 **Intelligent Analysis** - Multi-factor scoring system considering play count, ratings, file size, age, and quality. all data will be **algorithmically** weighted against IMDb, tvdb and Rotten Tomatoes vs play count and library freshness. Please be sure to perform a fresh scan before deleting to be sure you have the most current weighting
+- 🔍 **Metadata Enrichment** - Infuses IMDb, TMDb, and Rotten Tomatoes ratings
+- 🛡️ **Easy Setup** - You will he walked through gathering API data, **RESUME ANYTIME!**
+- 💾 **All Changes Trackeds** - All operations create audit trails
 - 🎨 **Dual Interface** - Full feature parity between CLI and GUI
 
 ### UI/UX Principles (Rules #1-5)
 
-1. **Safety First** - Dry-run defaults, explicit confirmations, never delete highly-rated content
-2. **CLI/GUI Parity** - Every CLI command has a GUI equivalent
-3. **Clarity & Feedback** - Detailed logging, progress bars, and status messages
-4. **Consistency** - Predictable interactions and patterns throughout
-5. **Aesthetic & Delight** - Polished visuals with mustard-colored progress bars
+1. **Hotdog Grabbing** - That one UI element is the **smartest** knob you have
+2. **The Untouchables** - Protect your cherished videos
+3. **CLI/GUI Parity** - Every CLI command has a GUI equivalent
+4. **Clarity & Feedback** - Detailed logging, progress bars, and status messages
+5. **Consistency** - Predictable interactions and patterns throughout
+6. **Aesthetic & Delight** - Polished visuals with mustard-colored progress bars
 
 ---
 
@@ -33,8 +40,10 @@ PlexIQ analyzes your Plex library using multi-factor scoring (play count, rating
 
 ### Prerequisites
 - Python 3.8 or higher
-- Plex Media Server with API access
-- Plex account credentials (token will be configured via setup wizard)
+- Plex Media Server (API access token is built-in and will be found automatically)
+- Plex account credentials (API access token will be configured via setup wizard)
+
+# PRO TIP # SEE STEP 1. # Run the **FULLY AUTOMATED INSTALL** We'll grab your Plex API token... while you grab your hotdog! #
 
 ### Installation
 
@@ -50,7 +59,7 @@ cd PlexIQ
 source venv/bin/activate
 ```
 
-### First Run - Setup Wizard (v3.1)
+### First Run - Setup Wizard
 
 PlexIQ v3.1 includes a guided setup wizard for easy token configuration:
 
@@ -59,7 +68,7 @@ PlexIQ v3.1 includes a guided setup wizard for easy token configuration:
 plexiq setup --execute
 
 # The wizard will guide you through:
-# 1. Browser-based token retrieval (automatic)
+# 1. Browser-based token retrieval (FULLY AUTOMATED PLEX API TOKEN RETRIEVAL)
 # 2. Manual token entry (with instructions)
 # 3. Token validation
 # 4. Secure storage in ~/.plexiq/config.json
@@ -320,19 +329,7 @@ PlexIQ/
 
 ## 🤝 Contributing
 
-PlexIQ is designed for seasoned users who understand media management and Plex systems. Contributions welcome:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Guidelines
-- Follow PEP 8 style guide
-- Write tests for new features
-- Update documentation
-- Maintain safety-first principles
+Please contact Rich at richitwerks.net if you are interested in licensing this software for commercial purposes or if you are interested in joining the cause!
 
 ---
 
@@ -372,16 +369,17 @@ However, it CAN optionally manage:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see LICENSE file for details.
 
 ---
 
 ## 👤 Author
 
 **Rich Knowles**
-Cybersecurity Engineer | Media Enthusiast
+Developer | Cybersecurity Engineer | Musician
 
-Built with safety-first design principles and respect for your media collection.
+**OZ**
+The Great & Beautiful
 
 ---
 
@@ -396,6 +394,7 @@ Built with safety-first design principles and respect for your media collection.
 
 ## 📞 Support
 
+- **Email Support**: support@itwerks.net
 - **Issues**: [GitHub Issues](https://github.com/richknowles/PlexIQ/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/richknowles/PlexIQ/discussions)
 
