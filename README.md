@@ -1,7 +1,7 @@
 # PlexIQ v5.3.1 — The Chicago Edition 🌭
 
 <p align="center">
-  <img src="web/plexiq-demo.gif" alt="PlexIQ v5.3.1 demo" width="900" />
+  <img src="web/plexiq-demo.gif" alt="PlexIQ v5.3.1 demo" width="900" /img>
 </p>
 
 
@@ -18,7 +18,7 @@ PlexIQ analyzes your Plex library using multi-factor scoring (play count, rating
 ---
 
 ## GET YOUR REDHOTS! 🌭🌭🌭
-### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GET YOUR REDHOTS OVER HERE!
+### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GET YOUR REDHOTS OVER HERE! 📣
 
 ---
 
