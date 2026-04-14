@@ -1,371 +1,178 @@
 # PlexIQ v5.3.1 — The Chicago Edition 🌭
 
 <p align="center">
-  <img src="plexiq-demo.gif" alt="PlexIQ v5.3 demo" width="900" />
+  <img src="web/plexiq-demo.gif" alt="PlexIQ v5.3.1 demo" width="900" />
 </p>
 
 **Smart Plex Media Library Management. One slider. No nonsense. Just HOTDOGS.**
 
-PlexIQ analyzes your Plex library using multi-factor scoring (play count, ratings, file size, age, quality) and surfaces deletion candidates through a cinematic 1930s Chicago noir interface. Built with "The Untouchables", but even some of them had to die...
+PlexIQ analyzes your Plex library using multi-factor scoring (play count, ratings, file size) and surfaces deletion candidates through a cinematic 1930s Chicago noir interface. Built with *The Untouchables* — but even some of them had to die.
 
-# We are NOT responsible for your data loss. #
-
-You will be asked **three** times if you want to delete something or some things. The third time you will be asked for your deletion password.
-
-All deleted data is **unrecoverable**! If you have been wise enough and able to accommodate the storage requirements of trying to back up all your movies, then good for you! You have done what most have not! We certainly will make a best case effort to help you if you need assistance. please reach out to: support@itwerks.net
+> **# We are NOT responsible for your data loss. #**
+>
+> You will be asked **three** times before anything gets deleted. The third time, you'll enter your deletion password. After that — it's gone. `OUR SOFTWARE WILL NOT BACK UP YOUR DATA EVER.` We love you. Be careful out there. ☠️
 
 ---
 
 ## GET YOUR REDHOTS! 🌭🌭🌭
-                            ## GET YOUR REDHOTS OVER HERE! ##
+### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GET YOUR REDHOTS OVER HERE!
+
+---
+
+## ✨ What It Does
 
 ### Core Capabilities
-- 📊 **Intelligent Analysis** - Multi-factor scoring system considering play count, ratings, file size, age, and quality. all data will be **algorithmically** weighted against IMDb, tvdb and Rotten Tomatoes vs play count and library freshness. Please be sure to perform a fresh scan before deleting to be sure you have the most current weighting
-- 🔍 **Metadata Enrichment** - Infuses IMDb, TMDb, and Rotten Tomatoes ratings
-- 🛡️ **Easy Setup** - You will he walked through gathering API data, **RESUME ANYTIME!**
-- 💾 **All Changes Trackeds** - All operations create audit trails
-- 🎨 **Dual Interface** - Full feature parity between CLI and GUI
 
-### UI/UX Principles (Rules #1-5)
+- 📊 **Intelligent Scoring** — Multi-factor algorithm weighing play count, IMDb/TMDb/Rotten Tomatoes ratings, and file size. Run a fresh Plex library scan before deleting to ensure the freshest weights.
+- 🌭 **The Hotdog Slider** — That one UI element is the **smartest** knob you have. Drag it. You'll understand immediately.
+- ★ **The Untouchables** — Star any title to permanently protect it from the Cut List. Marquee lights included. No extra charge.
+- 🛡️ **Dry Run by Default** — Nothing gets touched until you flip the switch. Ratings ≥ 8.0 are always protected, no exceptions.
+- 🗑️ **THE CUT LIST** — Your deletion candidates, ranked by score. Multi-select, page through, or nuke the whole list. Your call.
+- 📋 **Full Audit Trail** — Every action logged. What went where and when.
 
-1. **Hotdog Grabbing** - That one UI element is the **smartest** knob you have
-2. **The Untouchables** - Protect your cherished videos
-3. **CLI/GUI Parity** - Every CLI command has a GUI equivalent
-4. **Clarity & Feedback** - Detailed logging, progress bars, and status messages
-5. **Consistency** - Predictable interactions and patterns throughout
-6. **Aesthetic & Delight** - Polished visuals with mustard-colored progress bars
+### UI/UX Principles
+
+1. **Hotdog Grabbing** — The slider IS the interface. Pull it left, things get safer. Pull it right, things get spicy.
+2. **The Untouchables** — Star it. Save it. Mean it.
+3. **Three Strikes** — Three confirmation steps + password before live deletion. We really don't want you to be sad.
+4. **Clarity & Feedback** — Progress bars, status dots, live Plex connection indicator.
+5. **Aesthetic & Delight** — 1930s Chicago noir. Art deco gold. Police sirens when it gets real.
 
 ---
 
-## 🌭 Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8 or higher
-- Plex Media Server (API access token is built-in and will be found automatically)
-- Plex account credentials (API access token will be configured via setup wizard)
 
-# PRO TIP # SEE STEP 1. # Run the **FULLY AUTOMATED INSTALL** We'll grab your Plex API token... while you grab your hotdog! #
+- Node.js 18+
+- A running Plex Media Server
+- Your Plex API token ([how to find it](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/))
 
-### Installation
+### Install
 
 ```bash
-# Clone the repository
 git clone https://github.com/richknowles/PlexIQ.git
-cd PlexIQ
-
-# Run the installation script
-./install.sh
-
-# Activate virtual environment
-source venv/bin/activate
+cd PlexIQ/web
+npm install
 ```
 
-### First Run - Setup Wizard
+### Configure
 
-PlexIQ v3.1 includes a guided setup wizard for easy token configuration:
-
-```bash
-# Run the interactive setup wizard
-plexiq setup --execute
-
-# The wizard will guide you through:
-# 1. Browser-based token retrieval (FULLY AUTOMATED PLEX API TOKEN RETRIEVAL)
-# 2. Manual token entry (with instructions)
-# 3. Token validation
-# 4. Secure storage in ~/.plexiq/config.json
-```
-
-**Alternative: Manual Configuration**
-
-If you prefer manual configuration, create a `.env` file:
+Create a `.env.local` file in the `web/` directory:
 
 ```bash
-cp .env.example .env
-nano .env  # Set your PLEX_TOKEN and other settings
-```
-
-### Usage Examples
-
-```bash
-# Validate your configuration
-plexiq config --validate
-
-# Collect metadata from a library
-plexiq collect Movies --enrich
-
-# Analyze and get recommendations
-plexiq analyze Movies --show-recommended
-
-# Perform a dry-run deletion
-plexiq delete Movies --dry-run
-
-# Launch the GUI (includes built-in setup wizard)
-plexiq gui
-```
-
----
-
-## 📖 Documentation
-
-### Configuration
-
-PlexIQ uses environment variables for configuration. Copy `.env.example` to `.env` and configure:
-
-```bash
-# Required
-PLEX_URL=http://localhost:32400
+PLEX_HOST=http://YOUR_PLEX_IP:32400
 PLEX_TOKEN=your_plex_token_here
-
-# Optional API Keys (for metadata enrichment)
-TMDB_API_KEY=your_tmdb_api_key
-OMDB_API_KEY=your_omdb_api_key
-
-# Scoring Weights (must sum to ~1.0)
-WEIGHT_PLAY_COUNT=0.3
-WEIGHT_RATINGS=0.25
-WEIGHT_SIZE=0.2
-WEIGHT_AGE=0.15
-WEIGHT_QUALITY=0.1
-
-# Safety Thresholds
-MIN_DELETION_SCORE=0.7
-NEVER_DELETE_RATING_THRESHOLD=8.0
 ```
 
-### CLI Commands
+> **PRO TIP:** See Step 1. Run the app. Grab a hotdog. We'll handle the rest.
 
-#### Collect Metadata
+### Run
+
 ```bash
-# Collect from a library with enrichment
-plexiq collect Movies --enrich
+# Development (hot reload via Turbopack)
+npm run dev
 
-# Collect without external metadata
-plexiq collect "TV Shows" --no-enrich --media-type show
-
-# Save to file
-plexiq collect Movies --output movies.json
+# Production build
+npm run build
+npm start
 ```
 
-#### Analyze Items
-```bash
-# Analyze and show all items
-plexiq analyze Movies --show-all
-
-# Show only recommended deletions
-plexiq analyze Movies --show-recommended
-
-# Limit results
-plexiq analyze Movies --limit 20
-
-# Output formats
-plexiq analyze Movies --format table
-plexiq analyze Movies --format report
-plexiq analyze Movies --format json
-```
-
-#### Delete Items
-```bash
-# Dry-run (default - NO actual deletion)
-plexiq delete Movies --dry-run
-
-# ACTUAL deletion (requires confirmation)
-plexiq delete Movies --execute --confirm
-
-# Use custom threshold
-plexiq delete Movies --min-score 0.8 --execute
-```
-
-#### Backup Management
-```bash
-# List backups
-plexiq backup list
-
-# Filter by type
-plexiq backup list --type deletion_executed
-
-# Restore a backup
-plexiq backup restore backup_file.json
-
-# Cleanup old backups
-plexiq backup cleanup
-```
-
-#### Configuration
-```bash
-# View configuration
-plexiq config
-
-# Show secrets (use carefully!)
-plexiq config --show-secrets
-
-# Validate and test connections
-plexiq config --validate
-```
+Open [http://localhost:3000](http://localhost:3000) — or wherever you're hosting it.
 
 ---
 
-## 🎨 GUI Interface
+## 🎛️ How To Use It
 
-Launch the GUI with:
-```bash
-plexiq gui
-
-# Or with a pre-selected library
-plexiq gui --library Movies
-```
-
-### GUI Features
-- **Mustard-colored progress bars** for visual feedback
-- **Context-aware right-click menus** (<100ms response time)
-- **Real-time analysis** with background processing
-- **Interactive tables** with sorting and filtering
-- **Safety confirmations** for all destructive operations
+1. **Select a library** from the dropdown (Movies, TV, whatever you've got)
+2. **Drag the hotdog** to set your aggression level — left is conservative, right is scorched earth
+3. **Click Analyze Library** — PlexIQ scores every item against your Plex data in real time
+4. **Review THE CUT LIST** — high scores = good deletion candidates. Check the scores. Trust the algorithm. Or don't. It's your data.
+5. **Star anything sacred** → it moves to THE UNTOUCHABLES and is never touched
+6. **Flip to Live Mode** if you're sure. Three confirmations. Password. Then it's done.
 
 ---
 
 ## 🧮 Scoring System
 
-PlexIQ uses a weighted multi-factor scoring system (0.0-1.0, where 1.0 = highest deletion priority):
+Scores range from `0.0` (keep it forever) to `1.0` (why does this exist).
 
-### Factors
+```
+Score = 0.55 × (8 - rating) / 8   +   0.45 × e^(−plays × 0.9)
+```
 
-1. **Play Count (30%)** - Never watched = high score, frequently watched = low score
-2. **External Ratings (25%)** - Low ratings = high score, high ratings = low score
-3. **File Size (20%)** - Larger files = higher score (more space recovery)
-4. **Age/Staleness (15%)** - Old + unwatched = high score
-5. **Quality (10%)** - Lower resolution/old codecs = higher score
+- **Ratings factor (55%)** — Low-rated content scores higher for deletion
+- **Play count factor (45%)** — Never watched = high score. Rewatched 12 times = untouchable in spirit, even if not starred
 
-### Safety Rules
-
-- **Never recommend deletion** if average rating ≥ 8.0/10
-- **Minimum score threshold** (default 0.7) must be met
-- **Detailed rationale** provided for every score
-- **Backup created** before any operation
+**Hard rule:** Anything rated ≥ 8.0 is protected at the UI level regardless of score.
 
 ---
 
 ## 🌭🌭🌭 Hotdogs are a risky business!
 
-### Dry-Run First (Rule #1)
-```bash
-# Default behavior - NO deletion
-plexiq delete Movies
+### Dry Run Mode (default)
 
-# Explicit flag required for actual deletion
-plexiq delete Movies --execute --confirm
-```
+The toggle is in the header. When it says **DRY RUN**, nothing real happens — you're just previewing. The interface will tell you exactly what *would* get deleted.
 
-### Automatic Backups
-- Every operation creates a timestamped backup
-- Backups include full metadata and checksums
-- Configurable retention period (default: 7 days)
+### Live Mode
 
-### Audit Trail
-- All actions logged with timestamps
-- Separate log files for each day
-- Configurable log retention (default: 30 days)
+Flip the toggle to **LIVE MODE**. A red warning banner appears. The delete button changes. The police sirens come out.
 
-### Protection Rules
-- Highly-rated content never recommended (≥8.0/10)
-- Confirmation prompts for destructive operations
-- Detailed preview before any deletion
+Three confirmation steps:
+1. Review what's being deleted
+2. Confirm the count
+3. Enter your deletion password
+
+After step 3 — files are gone. `review all recommendations before executing — three strikes and you're out!!! ❌❌❌ 😵`
 
 ---
 
-## 🧪 Development
+## 📁 Project Structure
 
-### Running Tests
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=plexiq
-
-# Run specific test file
-pytest tests/test_analyzer.py
-
-# Run with verbosity
-pytest -v
-```
-
-### Project Structure
 ```
 PlexIQ/
-├── plexiq/                  # Main package
-│   ├── __init__.py
-│   ├── cli.py              # CLI entry point
-│   ├── config.py           # Configuration management
-│   ├── logger.py           # Logging system
-│   ├── backup.py           # Backup manager
-│   ├── collector.py        # Metadata collection
-│   ├── analyzer.py         # Scoring engine
-│   ├── commands/           # CLI commands
-│   │   ├── collect.py
-│   │   ├── analyze.py
-│   │   ├── delete.py
-│   │   ├── backup.py
-│   │   └── config.py
-│   └── gui/                # GUI components
-│       ├── main_window.py
-│       └── components/
-│           ├── progress_bar.py
-│           ├── table_widget.py
-│           └── dialogs.py
-├── tests/                  # Test suite
-├── docs/                   # Documentation
-├── examples/               # Example scripts
-├── data/                   # Data directory (created on install)
-│   ├── backups/
-│   ├── logs/
-│   └── cache/
-├── requirements.txt        # Dependencies
-├── setup.py               # Package setup
-├── install.sh             # Installation script
-├── .env.example           # Example configuration
-└── README.md              # This file
+└── web/                        # Next.js 15 app (the whole show)
+    ├── app/
+    │   ├── page.tsx            # Main dashboard — all the Chicago magic
+    │   ├── api/
+    │   │   ├── libraries/      # GET /api/libraries → Plex library list
+    │   │   ├── analyze/        # GET /api/analyze?sectionId=X → scored movies
+    │   │   └── delete/         # POST /api/delete → live deletion endpoint
+    │   └── layout.tsx
+    ├── components/
+    │   ├── threshold-slider.tsx # THE HOTDOG (do not underestimate it)
+    │   ├── library-stats.tsx   # Stats display panel
+    │   └── mustard-progress.tsx
+    ├── types/
+    │   └── plexiq.ts
+    └── .env.local              # Your Plex credentials (never commit this)
 ```
-
----
-
-## 🤝 Contributing
-
-Please contact Rich at richitwerks.net if you are interested in licensing this software for commercial purposes or if you are interested in joining the cause!
-
----
-
-## 📋 Roadmap
-
-- [ ] Support for TV shows with episode-level analysis
-- [ ] Duplicate detection and resolution
-- [ ] Cloud storage integration
-- [ ] Advanced scheduling for automated maintenance
-- [ ] Multi-server support
-- [ ] Enhanced quality metrics (codec efficiency, bitrate analysis)
-- [ ] Integration with *arr stack (Radarr, Sonarr)
 
 ---
 
 ## ⚠️ Important Notes
 
-### Deletion Context
-PlexIQ DELETES YOUR **media files**. It does NOT delete:
+PlexIQ **DELETES YOUR MEDIA FILES** via the Plex API. It does NOT touch:
 - System files
 - Plex database
-- User data
 - Configuration files
+- User data
 
-### LOG FILES
-- OUR SOFTWARE WILL NOT BACK UP YOUR DATA EVER!
-- Deleted media files are handled by Plex's built-in trash
-- Review all recommendations before executing - three strikes and you're out!!! ❌❌❌ 😵
-- Test with dry-run mode first
+Deleted media is removed through Plex's own deletion mechanism. There is no undo. There is no recovery. There is only the hotdog.
+
+---
+
+## 🤝 Contributing / Licensing
+
+Interested in licensing PlexIQ for commercial use, or want to join the cause?
+
+Contact Rich: **support@itwerks.net**
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see LICENSE file for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
@@ -379,21 +186,12 @@ The Great & Beautiful
 
 ---
 
-## 🙏 Acknowledgments
-
-- Plex team for the excellent media server
-- TMDb and OMDb for metadata APIs
-- Python Rich library for beautiful terminal output
-- PyQt6 for GUI framework
-
----
-
 ## 📞 Support
 
-- **Email Support**: support@itwerks.net
+- **Email**: support@itwerks.net
 - **Issues**: [GitHub Issues](https://github.com/richknowles/PlexIQ/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/richknowles/PlexIQ/discussions)
 
 ---
-☠️
-**Remember: Always test with `--dry-run` first! 🛡️**
+
+☠️ **Remember: Always test with Dry Run first. The hotdog will guide you. 🌭**
