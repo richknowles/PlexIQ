@@ -228,21 +228,20 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
         />
 
         {/* ── GRAB HANDLE ──
-            Visual indicator centered on the track.
-            Now properly aligned so it visually matches where you click. */}
+            Positioned to align exactly with the track center. */}
         <div
           className="grab-handle"
           style={{
             position: "absolute",
-            top: "50%", // Center vertically on the track
+            bottom: "0px", // Align bottom with track
             left: hotdogLeft,
-            transform: "translate(-50%, -50%)", // Center both X and Y
-            zIndex: 10, // Above track so it's visible
+            transform: "translateX(-50%)",
+            zIndex: 10,
             transition: isGrabbed ? "none" : "left 0.06s ease-out",
             background: isGrabbed
               ? `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}CC 100%)`
               : "linear-gradient(135deg, #C9A84C 0%, #8B6914 100%)",
-            pointerEvents: "none", // Let the track handle the dragging
+            pointerEvents: "none",
           }}
         >
           ⋮⋮
