@@ -321,9 +321,11 @@ export default function Dashboard() {
 
   const selectedLibraryTitle = libraries.find(l => l.key === selectedSectionId)?.title || "";
 
-  // Filter based on threshold only (selections are just visual checkmarks)
+  // Filter based on INVERTED threshold (0 = show nothing, 100 = show everything)
+  // Higher threshold = more aggressive = more candidates shown
   const filteredMovies = movies.filter(m => {
-    return m.score >= threshold && !fadingIds.has(m.id) && !untouchables.has(m.id);
+    const minScore = 100 - threshold; // Invert: threshold 0 = need score 100, threshold 100 = need score 0
+    return m.score >= minScore && !fadingIds.has(m.id) && !untouchables.has(m.id);
   });
 
   // Sort movies
@@ -460,7 +462,8 @@ export default function Dashboard() {
     await new Promise(r => setTimeout(r, 300));
 
     const fetchedMovies: PlexMovie[] = data.movies;
-    const candidates = fetchedMovies.filter(m => m.score >= threshold && !untouchables.has(m.id));
+    const minScore = 100 - threshold; // Use inverted threshold
+    const candidates = fetchedMovies.filter(m => m.score >= minScore && !untouchables.has(m.id));
     setMovies(fetchedMovies);
     setStats({
       ...data.stats,
@@ -505,9 +508,15 @@ export default function Dashboard() {
 
       if (!isDryRun) {
         // ── Real Plex deletion ──
-        const toDelete = selectedIds.size > 0
-          ? movies.filter(m => selectedIds.has(m.id))
-          : filteredMovies;
+        // ONLY delete manually checked items (never auto-delete based on threshold)
+        if (selectedIds.size === 0) {
+          alert("No items selected for deletion. Please check items you want to delete.");
+          setConfirmStep(0);
+          setPassword("");
+          return;
+        }
+
+        const toDelete = movies.filter(m => selectedIds.has(m.id));
         const ratingKeys = toDelete.map(m => m.ratingKey);
         try {
           await fetch("/api/delete", {
@@ -534,8 +543,9 @@ export default function Dashboard() {
 
   const cancelConfirm = () => { setConfirmStep(0); setPassword(""); setPwdError(false); };
 
-  const deleteTargets  = selectedIds.size > 0 ? selectedIds.size : filteredMovies.length;
-  const cutListCount   = selectedIds.size > 0 ? selectedIds.size : filteredMovies.length;
+  // CUT LIST = ONLY manually checked items (must explicitly check to delete)
+  const cutListCount   = selectedIds.size; // Only checked items get deleted
+  const deleteTargets  = selectedIds.size; // Same - only checked items
   const showPoliceLights = !isDryRun && confirmStep > 0;
 
   const ScoreCell = ({ score }: { score: number }) => {
@@ -667,6 +677,7 @@ export default function Dashboard() {
               </button>
               <button className="u-btn" onClick={() => setActiveTab("analyze")} disabled={!stats}>
                 THE CUT LIST ({stats ? cutListCount : "—"})
+                {stats && cutListCount === 0 && <span style={{ marginLeft:"4px", fontSize:"9px", color:"#6B5E3C" }}>(check items to delete)</span>}
               </button>
               <button className="u-btn" onClick={() => setActiveTab("saved")}
                 style={{ borderColor:untouchables.size > 0 ? "#C9A84C88" : undefined, color:untouchables.size > 0 ? "#FFE066" : undefined }}>
@@ -674,11 +685,12 @@ export default function Dashboard() {
               </button>
               <button
                 className={"u-btn danger" + (!isDryRun ? " live" : "")}
-                disabled={!stats || isAnalyzing}
+                disabled={!stats || isAnalyzing || selectedIds.size === 0}
                 onClick={handleDeleteClick}
+                title={selectedIds.size === 0 ? "Check items to delete first" : undefined}
               >
                 {isDryRun
-                  ? `🌭 CUT LIST (DRY RUN)`
+                  ? `🌭 CUT LIST${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""} (DRY RUN)`
                   : `🗑️ DELETE ${selectedIds.size > 0 ? selectedIds.size : filteredMovies.length} FILES — LIVE`}
               </button>
             </div>
@@ -753,7 +765,8 @@ export default function Dashboard() {
                 <div style={{ display:"flex", borderBottom:"1px solid #2A2318", padding:"0 16px" }}>
                   <button className={"tab-btn active"}>
                     THE CUT LIST ({cutListCount})
-                    {selectedIds.size > 0 && selectedIds.size !== filteredMovies.length && <span style={{ marginLeft:"8px", color:"#4A3F28", fontSize:"9px" }}>(of {filteredMovies.length} candidates)</span>}
+                    {cutListCount === 0 && <span style={{ marginLeft:"8px", color:"#6B5E3C", fontSize:"9px" }}>(check items you want to delete)</span>}
+                    {cutListCount > 0 && filteredMovies.length > cutListCount && <span style={{ marginLeft:"8px", color:"#4A3F28", fontSize:"9px" }}>(of {filteredMovies.length} candidates)</span>}
                   </button>
                 </div>
                 <div style={{ padding:"0 16px 16px", overflowX:"auto" }}>

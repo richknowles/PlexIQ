@@ -142,7 +142,7 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
       {/* Title row */}
       <div className="flex items-center justify-between">
         <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.15em", color:"#C9A84C" }}>
-          DELETION THRESHOLD
+          AGGRESSIVENESS
         </div>
         <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"20px", color:accentColor, textShadow:`0 0 20px ${accentColor}66`, transition:"color 0.3s, text-shadow 0.3s" }}>
           {Math.round(localValue)}
@@ -228,15 +228,15 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
         />
 
         {/* ── GRAB HANDLE ──
-            Visual indicator positioned exactly on the track.
-            Moves with mousedown to show active dragging. */}
+            Visual indicator centered on the track.
+            Now properly aligned so it visually matches where you click. */}
         <div
           className="grab-handle"
           style={{
             position: "absolute",
-            bottom: "-4px", // Aligned with track center (16px track / 2 - 24px handle / 2 = -4px)
+            top: "50%", // Center vertically on the track
             left: hotdogLeft,
-            transform: "translateX(-50%)",
+            transform: "translate(-50%, -50%)", // Center both X and Y
             zIndex: 10, // Above track so it's visible
             transition: isGrabbed ? "none" : "left 0.06s ease-out",
             background: isGrabbed
@@ -255,7 +255,7 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
           {getLabel(localValue)}
         </span>
         <span style={{ fontSize:"11px", color:"#6B5E3C" }}>
-          {localValue >= 70 ? "Ratings \u22658.0 protected" : "Safe zone"}
+          {localValue === 0 ? "No candidates" : localValue >= 70 ? "Ratings \u22658.0 always protected" : "Fewer candidates"}
         </span>
       </div>
 
