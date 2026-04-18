@@ -2,7 +2,7 @@
 
 /**
  * PlexIQ v5.3.2 - Terminal User Interface (TUI)
- * Production Ready Edition
+ * Chicago Edition
  *
  * Design Philosophy:
  * - Clean, dialog-based navigation
@@ -29,7 +29,7 @@ class PlexIQTUI {
   initScreen() {
     this.screen = blessed.screen({
       smartCSR: true,
-      title: 'PlexIQ v5.3.2 - Production Ready Edition',
+      title: 'PlexIQ v5.3.2 - Chicago Edition',
       fullUnicode: true,
     });
 
@@ -59,7 +59,7 @@ class PlexIQTUI {
       left: 0,
       width: '100%',
       height: 3,
-      content: '{center}{bold}PlexIQ v5.3.2{/bold} - Production Ready Edition{/center}',
+      content: '{center}{bold}PlexIQ v5.3.2{/bold} - Chicago Edition{/center}',
       tags: true,
       style: {
         fg: 'yellow',

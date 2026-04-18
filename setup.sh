@@ -21,7 +21,7 @@ BOLD='\033[1m'
 clear
 echo ""
 echo -e "${GOLD}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GOLD}${BOLD}       PlexIQ v5.3.2 - Production Ready Edition        ${NC}"
+echo -e "${GOLD}${BOLD}           PlexIQ v5.3.2 - Chicago Edition            ${NC}"
 echo -e "${GOLD}${BOLD}           🌭 Setup Wizard - GET YOUR HOTDOGS! 🌭       ${NC}"
 echo -e "${GOLD}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""

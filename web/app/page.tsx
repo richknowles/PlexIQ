@@ -428,7 +428,7 @@ export default function Dashboard() {
                   PLEXIQ
                 </h1>
                 <p style={{ margin:0, fontSize:"12px", letterSpacing:"0.25em", color:"#4A3F28", fontFamily:"var(--font-audiowide)", marginTop:"2px" }}>
-                  v5.3.2 · PRODUCTION READY EDITION
+                  v5.3.2 · CHICAGO EDITION
                 </p>
               </div>
             </div>

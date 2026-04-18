@@ -1,4 +1,4 @@
-# PlexIQ v5.3.2 — Production Ready Edition 🌭
+# PlexIQ v5.3.2 — The Chicago Edition 🌭
 
 <p align="center">
   <img src="plexiq-demo.gif" alt="PlexIQ v5.3.2 demo" width="900" />
@@ -6,19 +6,25 @@
 
 ---
 
-**Smart Plex Media Library Management. Simple. Powerful. Production-ready.**
+**Smart Plex Media Library Management. One slider. No nonsense. Just HOTDOGS.**
 
-PlexIQ analyzes your Plex libraries using intelligent scoring (ratings, play count, file size) and helps you identify deletion candidates through an elegant web interface with 1930s Chicago noir aesthetics. Built for the $25K Anthropic funding presentation.
+PlexIQ analyzes your Plex library using multi-factor scoring (play count, ratings, file size) and surfaces deletion candidates through a cinematic 1930s Chicago noir interface. Built with *The Untouchables* aesthetic — because even some of them had to die.
 
-> **⚠️ SAFETY FIRST**
+> **# We are NOT responsible for your data loss. #**
 >
-> PlexIQ deletes media files through Plex. Always test with the Demo Library first. Triple confirmation required for live deletion.
+> You will be asked **three** times before anything gets deleted. The third time, you'll enter your deletion password. After that — it's gone. `OUR SOFTWARE WILL NOT BACK UP YOUR DATA EVER.` We love you. Be careful out there. ☠️
+
+
+---
+
+## GET YOUR REDHOTS! 🌭🌭🌭
+### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GET YOUR REDHOTS OVER HERE! 📣
 
 ---
 
 ## ✨ What's New in v5.3.2
 
-### Production Ready Features
+### Chicago Edition Features
 
 - **🔌 Auto-Reconnect** - Automatic Plex connection management with manual retry
 - **💾 Session Persistence** - Your selections survive page refresh, disconnects, and accidental navigation
@@ -29,12 +35,20 @@ PlexIQ analyzes your Plex libraries using intelligent scoring (ratings, play cou
 
 ### Core Capabilities
 
-- 📊 **Intelligent Scoring** - Multi-factor algorithm (play count, ratings, file size)
-- 🌭 **The Hotdog Slider** - Single control for deletion threshold
-- ★ **The Untouchables** - Star items for permanent protection
-- 🛡️ **Dry Run Mode** - Safe testing without actually deleting (default)
-- 🗑️ **Smart Deletion** - Ratings ≥ 8.0 automatically protected
-- 📋 **Full Audit Trail** - Complete logging of all operations
+- 📊 **Intelligent Scoring** — Multi-factor algorithm weighing play count, IMDb/TMDb/Rotten Tomatoes ratings, and file size. Run a fresh Plex library scan before deleting to ensure the freshest weights.
+- 🌭 **The Hotdog Slider** — That one UI element is the **smartest** knob you have. Drag it. You'll understand immediately.
+- ★ **The Untouchables** — Star any title to permanently protect it from the Cut List. Marquee lights included. No extra charge.
+- 🛡️ **Dry Run by Default** — Nothing gets touched until you flip the switch. Ratings ≥ 8.0 are always protected, no exceptions.
+- 🗑️ **THE CUT LIST** — Your deletion candidates, ranked by score. Multi-select, page through, or nuke the whole list. Your call.
+- 📋 **Full Audit Trail** — Every action logged. What went where and when.
+
+### UI/UX Principles
+
+1. **Hotdog Grabbing** — The slider IS the interface. Pull it left, things get safer. Pull it right, things get spicy.
+2. **The Untouchables** — Star it. Save it. Mean it.
+3. **Three Strikes** — Three confirmation steps + password before live deletion. We really don't want you to be sad.
+4. **Clarity & Feedback** — Progress bars, status dots, live Plex connection indicator.
+5. **Aesthetic & Delight** — 1930s Chicago noir. Art deco gold. Police sirens when it gets real.
 
 ---
 
@@ -44,7 +58,7 @@ PlexIQ analyzes your Plex libraries using intelligent scoring (ratings, play cou
 
 - **Node.js 18+** (check: `node --version`)
 - **Plex Media Server** running and accessible
-- **Plex Token** ([how to find it](https://support.plex.tv/articles/204059436))
+- **Plex Token** ([how to find it](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/))
 
 ### Installation (Recommended)
 
@@ -73,6 +87,8 @@ echo "PLEX_TOKEN=your_token_here" >> .env.local
 npm run dev
 ```
 
+Open [http://localhost:3000](http://localhost:3000)
+
 ---
 
 ## 🎨 Interfaces
@@ -83,8 +99,6 @@ npm run dev
 cd web
 npm run dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000)
 
 **Features:**
 - 🌭 Hotdog slider for threshold control
@@ -125,13 +139,12 @@ npm run tui
 1. Launch PlexIQ (Web or TUI)
 2. Select **"🧪 Demo Library"** from dropdown
 3. Practice the full workflow:
-   - Analyze library
-   - Review scores
-   - Star important items
-   - Run dry-run deletion
-   - Learn the interface safely
+   - Analyze and score items
+   - Star items as untouchable
+   - Practice deletion flow (dry-run)
+   - Learn the interface
 
-The demo library uses sample data - no real files affected.
+**Demo library is clearly labeled** with a 🧪 icon in both Web and TUI. Uses sample data - no real files affected.
 
 ---
 
@@ -170,23 +183,24 @@ Click **"ANALYZE LIBRARY"** - PlexIQ scores every item.
 
 ---
 
-## 🧮 Scoring Algorithm
+## 🧮 Scoring System
+
+Scores range from `0.0` (keep it forever) to `1.0` (why does this exist).
 
 ```
-Score = 0.55 × (8 - rating)/8  +  0.45 × e^(-plays × 0.9)
+Score = 0.55 × (8 - rating) / 8   +   0.45 × e^(−plays × 0.9)
 ```
 
-- **Score range**: 0.0 (keep forever) to 1.0 (prime deletion candidate)
-- **Ratings factor (55%)**: Lower ratings = higher score
-- **Play count factor (45%)**: Never watched = high score
+- **Ratings factor (55%)** — Low-rated content scores higher for deletion
+- **Play count factor (45%)** — Never watched = high score. Rewatched 12 times = untouchable in spirit, even if not starred
 
-**Protection**: Items rated ≥ 8.0 automatically protected regardless of score.
+**Hard rule:** Anything rated ≥ 8.0 is protected at the UI level regardless of score.
 
 ---
 
 ## 💾 Session Persistence
 
-**New in v5.3.2!** Your session survives:
+Your session survives:
 - Page refresh
 - Browser disconnect
 - Accidental navigation
@@ -210,11 +224,6 @@ To reset: Clear browser storage (DevTools → Application → Clear site data).
 - Refresh library list
 - Re-establish connection
 - Update library status
-
-**Connection Indicators**:
-- Green dot = Connected
-- Red dot = Disconnected
-- Yellow dot = Connecting
 
 ---
 
@@ -303,56 +312,36 @@ NEXT_PUBLIC_DEMO_ENABLED=true
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contributing / Licensing
 
-This is production code for Anthropic funding presentation. For commercial licensing or contributions:
+Interested in licensing PlexIQ for commercial use, or want to join the cause?
 
-**Contact**: support@itwerks.net
+Contact Rich: **support@itwerks.net**
 
 ---
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 👥 Team
+## 👤 TEAM HOTDOG! 🌭 💙 🌭
 
-**Rich Knowles**  
-Developer | Cybersecurity Engineer | Musician  
-[resume.richknowles.com](https://resume.richknowles.com)
+**Rich Knowles**
+Developer | Cybersecurity Engineer | Musician
 
-**OZ (Claude Cowork)**  
-The Great & Beautiful (Chicago Edition Designer)
-
-**Scotty (Claude Code)**  
-Production Engineering (v5.3.2)
+**OZ**
+The Great & Beautiful
 
 ---
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/richknowles/PlexIQ/issues)
 - **Email**: support@itwerks.net
+- **Issues**: [GitHub Issues](https://github.com/richknowles/PlexIQ/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/richknowles/PlexIQ/discussions)
 
 ---
 
-## 🎯 For Anthropic Presentation
-
-PlexIQ v5.3.2 demonstrates:
-- Production-ready code quality
-- Elegant UI/UX design
-- Intelligent algorithms
-- Safety-first architecture
-- Session persistence
-- Connection management
-- Comprehensive documentation
-- Dual interface support
-
-Built with Claude Code for the $25K funding opportunity.
-
----
-
-☠️ **Always test with Demo Library first. The hotdog will guide you. 🌭**
+☠️ **Remember: Always test with Dry Run first. The hotdog will guide you. 🌭**
