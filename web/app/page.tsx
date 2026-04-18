@@ -171,7 +171,8 @@ const CSS = `
   a.resume-link:hover { color:#FF6868; text-shadow:0 0 10px #E8404066; }
 `;
 
-const PAGE_SIZE  = 7;
+const DEFAULT_PAGE_SIZE = 25;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 250];
 const BULB_COUNT = { top:12, bottom:12, left:5, right:5 };
 
 function MarqueeBulbs() {
@@ -193,7 +194,7 @@ function MarqueeBulbs() {
 }
 
 export default function Dashboard() {
-  const [threshold,        setThreshold]        = useState(0.5);
+  const [threshold,        setThreshold]        = useState(50); // Now 0-100 scale
   const [libraries,        setLibraries]        = useState<PlexLibrary[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState("");
   const [isAnalyzing,      setIsAnalyzing]      = useState(false);
@@ -205,12 +206,14 @@ export default function Dashboard() {
   const [untouchables,     setUntouchables]     = useState<Set<number>>(new Set());
   const [fadingIds,        setFadingIds]        = useState<Set<number>>(new Set());
   const [selectedIds,      setSelectedIds]      = useState<Set<number>>(new Set());
-  const [visibleCount,     setVisibleCount]     = useState(PAGE_SIZE);
+  const [pageSize,         setPageSize]         = useState(DEFAULT_PAGE_SIZE);
+  const [visibleCount,     setVisibleCount]     = useState(DEFAULT_PAGE_SIZE);
   const [confirmStep,      setConfirmStep]      = useState<0|1|2|3>(0);
   const [password,         setPassword]         = useState("");
   const [pwdError,         setPwdError]         = useState(false);
   const [deleteSuccess,    setDeleteSuccess]    = useState(false);
   const [libError,         setLibError]         = useState("");
+  const [globalCutList,    setGlobalCutList]    = useState<Map<string, Set<number>>>(new Map()); // libraryKey -> Set of movie IDs
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SESSION PERSISTENCE v5.3.2 - Survives refresh, disconnect, accidental pulls
@@ -224,16 +227,35 @@ export default function Dashboard() {
     const savedThreshold = localStorage.getItem("plexiq_threshold");
     const savedDryRun = localStorage.getItem("plexiq_dryRun");
     const savedStars = localStorage.getItem("plexiq_untouchables");
+    const savedPageSize = localStorage.getItem("plexiq_pageSize");
+    const savedGlobalCutList = localStorage.getItem("plexiq_globalCutList");
 
     if (savedLibrary) setSelectedSectionId(savedLibrary);
-    if (savedThreshold) setThreshold(parseFloat(savedThreshold));
+    if (savedThreshold) {
+      const t = parseFloat(savedThreshold);
+      // Migrate old 0-1 values to 0-100
+      setThreshold(t <= 1 ? t * 100 : t);
+    }
     if (savedDryRun !== null) setIsDryRun(savedDryRun === "true");
+    if (savedPageSize) setPageSize(parseInt(savedPageSize));
     if (savedStars) {
       try {
         const stars = JSON.parse(savedStars) as number[];
         setUntouchables(new Set(stars));
       } catch (e) {
         console.warn("Could not restore starred items:", e);
+      }
+    }
+    if (savedGlobalCutList) {
+      try {
+        const data = JSON.parse(savedGlobalCutList);
+        const map = new Map<string, Set<number>>();
+        Object.entries(data).forEach(([key, ids]) => {
+          map.set(key, new Set(ids as number[]));
+        });
+        setGlobalCutList(map);
+      } catch (e) {
+        console.warn("Could not restore global cut list:", e);
       }
     }
   }, []);
@@ -261,6 +283,21 @@ export default function Dashboard() {
     localStorage.setItem("plexiq_untouchables", JSON.stringify([...untouchables]));
   }, [untouchables]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("plexiq_pageSize", pageSize.toString());
+    setVisibleCount(pageSize);
+  }, [pageSize]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const obj: Record<string, number[]> = {};
+    globalCutList.forEach((ids, key) => {
+      obj[key] = [...ids];
+    });
+    localStorage.setItem("plexiq_globalCutList", JSON.stringify(obj));
+  }, [globalCutList]);
+
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   // Fetch Plex library list — callable on mount AND on retry
@@ -282,9 +319,16 @@ export default function Dashboard() {
 
   const selectedLibraryTitle = libraries.find(l => l.key === selectedSectionId)?.title || "";
 
-  const filteredMovies = movies.filter(
-    m => m.score >= (1 - threshold) && !fadingIds.has(m.id) && !untouchables.has(m.id)
-  );
+  // Filter based on 0-100 threshold and user selections
+  const filteredMovies = movies.filter(m => {
+    // If nothing is manually selected, use threshold filter
+    if (selectedIds.size === 0) {
+      return m.score >= threshold && !fadingIds.has(m.id) && !untouchables.has(m.id);
+    }
+    // If items are manually selected, show only selected ones
+    return selectedIds.has(m.id) && !fadingIds.has(m.id) && !untouchables.has(m.id);
+  });
+
   const visibleFiltered  = filteredMovies.slice(0, visibleCount);
   const hasMore          = filteredMovies.length > visibleCount;
   const untouchableItems = movies.filter(m => untouchables.has(m.id));
@@ -308,9 +352,11 @@ export default function Dashboard() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === visibleFiltered.length) {
+    // If all visible items are selected, clear selection completely
+    if (selectedIds.size > 0 && visibleFiltered.every(m => selectedIds.has(m.id))) {
       setSelectedIds(new Set());
     } else {
+      // Select all visible items
       setSelectedIds(new Set(visibleFiltered.map(m => m.id)));
     }
   };
@@ -318,8 +364,9 @@ export default function Dashboard() {
   const handleAnalyze = async () => {
     if (!selectedSectionId) { alert("Select a library first"); return; }
     setIsAnalyzing(true);
-    setVisibleCount(PAGE_SIZE);
+    setVisibleCount(pageSize);
     setMovies([]);
+    setSelectedIds(new Set()); // Clear selections when analyzing new library
 
     const stages = [
       { stage:"connecting", message:"Connecting to Plex...",          pct:10, duration:700  },
@@ -351,13 +398,18 @@ export default function Dashboard() {
     await new Promise(r => setTimeout(r, 300));
 
     const fetchedMovies: PlexMovie[] = data.movies;
-    const candidates = fetchedMovies.filter(m => m.score >= (1 - threshold) && !untouchables.has(m.id));
+    const candidates = fetchedMovies.filter(m => m.score >= threshold && !untouchables.has(m.id));
     setMovies(fetchedMovies);
     setStats({
       ...data.stats,
       deletionCandidates:  candidates.length,
       potentialSpaceSaved: candidates.reduce((acc, m) => acc + m.sizeBytes, 0),
     });
+
+    // Update global cut list for this library
+    const currentLibraryIds = new Set(filteredMovies.map(m => m.id));
+    setGlobalCutList(prev => new Map(prev).set(selectedSectionId, currentLibraryIds));
+
     setIsAnalyzing(false);
     setActiveTab("analyze");
   };
@@ -371,7 +423,27 @@ export default function Dashboard() {
     if (confirmStep === 2) { setConfirmStep(3); return; }
     if (confirmStep === 3) {
       if (!password.trim()) { setPwdError(true); return; }
-      setPwdError(false);
+
+      // Verify password with server
+      try {
+        const verifyRes = await fetch("/api/verify-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+        const verifyData = await verifyRes.json();
+
+        if (!verifyData.valid) {
+          setPwdError(true);
+          alert("Incorrect deletion password. Check your .env.local file.");
+          return;
+        }
+
+        setPwdError(false);
+      } catch {
+        alert("Password verification failed. Check server connection.");
+        return;
+      }
 
       if (!isDryRun) {
         // ── Real Plex deletion ──
@@ -408,8 +480,8 @@ export default function Dashboard() {
   const showPoliceLights = !isDryRun && confirmStep > 0;
 
   const ScoreCell = ({ score }: { score: number }) => {
-    const color = score >= 0.85 ? "#E84040" : score >= 0.65 ? "#C9A84C" : "#8B7355";
-    return <span style={{ color, fontWeight:700, fontFamily:"var(--font-audiowide)", fontSize:"13px" }}>{score.toFixed(2)}</span>;
+    const color = score >= 85 ? "#E84040" : score >= 65 ? "#C9A84C" : "#8B7355";
+    return <span style={{ color, fontWeight:700, fontFamily:"var(--font-audiowide)", fontSize:"13px" }}>{Math.round(score)}</span>;
   };
 
   return (
@@ -428,7 +500,7 @@ export default function Dashboard() {
                   PLEXIQ
                 </h1>
                 <p style={{ margin:0, fontSize:"12px", letterSpacing:"0.25em", color:"#4A3F28", fontFamily:"var(--font-audiowide)", marginTop:"2px" }}>
-                  v5.3.2 · CHICAGO EDITION
+                  v5.3.3 · CHICAGO EDITION
                 </p>
               </div>
             </div>
@@ -662,13 +734,36 @@ export default function Dashboard() {
                     </tbody>
                   </table>
                 </div>
-                {hasMore && (
-                  <div style={{ borderTop:"1px solid #1A1408", padding:"12px 24px", textAlign:"center", cursor:"pointer" }} onClick={() => setVisibleCount(v => v + PAGE_SIZE)}>
-                    <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.12em", color:"#C9A84C" }}>
-                      LOAD MORE ↓ ({filteredMovies.length - visibleCount} remaining)
+                {/* Pagination Controls v5.3.3 */}
+                <div style={{ borderTop:"1px solid #1A1408", padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+                    <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.1em", color:"#4A3F28" }}>
+                      SHOW:
+                    </span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => setPageSize(parseInt(e.target.value))}
+                      style={{ background:"#0D0A04", border:"1px solid #2A2318", color:"#C8B99A", padding:"6px 10px", fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.08em", cursor:"pointer", outline:"none" }}
+                    >
+                      {PAGE_SIZE_OPTIONS.map(size => (
+                        <option key={size} value={size}>{size} items</option>
+                      ))}
+                    </select>
+                    <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.08em", color:"#6B5E3C" }}>
+                      Showing {Math.min(visibleCount, filteredMovies.length)} of {filteredMovies.length}
                     </span>
                   </div>
-                )}
+                  {hasMore && (
+                    <button
+                      onClick={() => setVisibleCount(v => v + pageSize)}
+                      style={{ background:"none", border:"1px solid #2A2318", color:"#C9A84C", fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.12em", padding:"8px 16px", cursor:"pointer", borderRadius:"2px", transition:"all 0.15s" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.boxShadow = "0 0 10px #C9A84C22"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A2318"; e.currentTarget.style.boxShadow = "none"; }}
+                    >
+                      LOAD MORE ↓ ({filteredMovies.length - visibleCount} remaining)
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>

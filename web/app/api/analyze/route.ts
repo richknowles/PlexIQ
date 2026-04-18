@@ -10,13 +10,13 @@ function formatSize(bytes: number): string {
   return `${bytes} B`;
 }
 
-// Higher score = more deletable (0–1).
+// Higher score = more deletable (0–100).
 // Low audience rating + never watched = high score.
 // Items rated >= 8.0 show as high score but UI protects them separately.
 function calcScore(rating: number, plays: number): number {
   const rFactor = Math.max(0, (8 - rating) / 8);      // 0 at rating 8+, 1 at 0
   const pFactor = Math.exp(-plays * 0.9);              // 1.0 at 0 plays, ~0.41 at 1
-  return Math.round((0.55 * rFactor + 0.45 * pFactor) * 100) / 100;
+  return Math.round((0.55 * rFactor + 0.45 * pFactor) * 10000) / 100; // Scale to 0-100
 }
 
 export async function GET(req: NextRequest) {
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
         itemCount:          movies.length,
         totalSize,
         avgScore:           movies.length
-          ? Math.round((movies.reduce((a, m) => a + m.score, 0) / movies.length) * 100) / 100
+          ? Math.round(movies.reduce((a, m) => a + m.score, 0) / movies.length)
           : 0,
         deletionCandidates: 0,      // computed client-side based on threshold
         potentialSpaceSaved: 0,

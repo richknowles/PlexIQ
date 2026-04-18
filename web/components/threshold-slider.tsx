@@ -43,8 +43,8 @@ const sliderCSS = `
   .plexiq-track {
     -webkit-appearance: none;
     appearance: none;
-    height: 10px;
-    border-radius: 5px;
+    height: 16px;
+    border-radius: 8px;
     outline: none;
     cursor: grab;
     touch-action: pan-y;
@@ -99,26 +99,26 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
   }, [onChange]);
 
   const getLabel = (t: number) => {
-    if (t >= 0.85) return "Very Aggressive";
-    if (t >= 0.70) return "Aggressive";
-    if (t >= 0.55) return "Moderate";
-    if (t >= 0.40) return "Conservative";
+    if (t >= 85) return "Very Aggressive";
+    if (t >= 70) return "Aggressive";
+    if (t >= 55) return "Moderate";
+    if (t >= 40) return "Conservative";
     return "Very Conservative";
   };
 
   const getAccentColor = (t: number) => {
-    if (t >= 0.85) return "#E84040";
-    if (t >= 0.70) return "#C9A84C";
-    if (t >= 0.55) return "#D4AF37";
-    if (t >= 0.40) return "#8B9670";
+    if (t >= 85) return "#E84040";
+    if (t >= 70) return "#C9A84C";
+    if (t >= 55) return "#D4AF37";
+    if (t >= 40) return "#8B9670";
     return "#6B7A8D";
   };
 
-  const pct          = localValue;
+  const pct          = localValue / 100; // Convert 0-100 to 0-1 for positioning
   const hotdogLeft   = `calc(${pct * 100}% - ${14 + pct * 12}px)`;
-  const trackBg      = `linear-gradient(90deg, #C9A84C ${localValue * 100}%, #2A2318 ${localValue * 100}%)`;
-  const hotdogSize   = Math.round(26 + localValue * 20);
-  const steamLevel   = localValue >= 0.85 ? 3 : localValue >= 0.65 ? 2 : localValue >= 0.45 ? 1 : 0;
+  const trackBg      = `linear-gradient(90deg, #C9A84C ${localValue}%, #2A2318 ${localValue}%)`;
+  const hotdogSize   = Math.round(26 + (localValue / 100) * 20);
+  const steamLevel   = localValue >= 85 ? 3 : localValue >= 65 ? 2 : localValue >= 45 ? 1 : 0;
   const accentColor  = getAccentColor(localValue);
 
   const steamParticles = [
@@ -139,7 +139,7 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
           DELETION THRESHOLD
         </div>
         <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"20px", color:accentColor, textShadow:`0 0 20px ${accentColor}66`, transition:"color 0.3s, text-shadow 0.3s" }}>
-          {localValue.toFixed(2)}
+          {Math.round(localValue)}
         </div>
       </div>
 
@@ -198,7 +198,8 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
         {/* ── GRAB DISC ──
             Anchored at track level. Moves X only — never Y.
             Completely decoupled from the hotdog's bob animation.
-            This is the brass steampunk thumb the user actually touches. */}
+            This is the brass steampunk thumb the user actually touches.
+            ENHANCED: Larger clickable area for easier grabbing */}
         <div
           className="grab-disc"
           style={{
@@ -215,12 +216,12 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
           }}
         />
 
-        {/* Track */}
+        {/* Track - v5.3.3: Increased height for easier grabbing */}
         <input
           type="range"
           min={0}
-          max={1}
-          step={0.01}
+          max={100}
+          step={1}
           value={localValue}
           onChange={handleChange}
           onMouseDown={() => setIsGrabbed(true)}
@@ -234,6 +235,8 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
             boxShadow: isGrabbed ? "0 0 10px #C9A84C55" : "none",
             border: "1px solid #3A3020",
             transition: "box-shadow 0.15s",
+            height: "16px", // Increased from 10px for easier clicking
+            cursor: "grab",
           }}
         />
       </div>
@@ -244,7 +247,7 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
           {getLabel(localValue)}
         </span>
         <span style={{ fontSize:"11px", color:"#6B5E3C" }}>
-          {localValue >= 0.7 ? "Ratings \u22658.0 protected" : "Safe zone"}
+          {localValue >= 70 ? "Ratings \u22658.0 protected" : "Safe zone"}
         </span>
       </div>
 
@@ -252,7 +255,7 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
 
       {/* Scale markers */}
       <div className="flex justify-between px-0.5">
-        {["0.0", "0.25", "0.5", "0.75", "1.0"].map((v) => (
+        {["0", "25", "50", "75", "100"].map((v) => (
           <div key={v} style={{ fontSize:"9px", color:"#4A3F28", fontFamily:"var(--font-audiowide)" }}>{v}</div>
         ))}
       </div>
