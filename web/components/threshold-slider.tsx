@@ -57,29 +57,35 @@ const sliderCSS = `
     pointer-events: none;
   }
 
-  /* Disc is styled here but positioned entirely via inline style — no conflict */
-  .grab-disc {
-    width: 45px;
-    height: 19px;
-    border-radius: 50%;
-    background:
-      repeating-linear-gradient(
-        90deg,
-        rgba(255,255,255,0.055) 0px, rgba(255,255,255,0.055) 1px,
-        transparent 1px, transparent 4px
-      ),
-      radial-gradient(ellipse at 36% 32%,
-        #D8C898 0%, #B09468 22%, #7A6040 50%, #4A3820 75%, #2E2010 100%
-      );
-    border: 1.5px solid #C9A84C;
+  /* Grab handle - simple button style that's clearly draggable */
+  .grab-handle {
+    width: 50px;
+    height: 24px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #C9A84C 0%, #8B6914 100%);
+    border: 2px solid #E8C96C;
     box-shadow:
       0 4px 12px rgba(0,0,0,0.8),
-      inset 0 1px 0 rgba(255,240,190,0.32),
-      inset 0 -2px 0 rgba(0,0,0,0.5),
-      0 0 0 1px rgba(0,0,0,0.4),
-      0 0 10px #C9A84C22;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    pointer-events: none;
+      inset 0 1px 0 rgba(255,240,190,0.4),
+      inset 0 -2px 0 rgba(0,0,0,0.3),
+      0 0 12px #C9A84C33;
+    transition: all 0.15s;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #0D0A04;
+    font-weight: bold;
+  }
+  .grab-handle:active {
+    cursor: grabbing;
+    transform: scale(0.98);
+    box-shadow:
+      0 2px 8px rgba(0,0,0,0.9),
+      inset 0 1px 0 rgba(255,240,190,0.4),
+      inset 0 -2px 0 rgba(0,0,0,0.3),
+      0 0 18px #C9A84C66;
   }
 
   .deco-line {
@@ -195,26 +201,26 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
           </div>
         </div>
 
-        {/* ── GRAB DISC ──
-            Anchored at track level. Moves X only — never Y.
-            Completely decoupled from the hotdog's bob animation.
-            This is the brass steampunk thumb the user actually touches.
-            ENHANCED: Larger clickable area for easier grabbing */}
+        {/* ── GRAB HANDLE ──
+            Simple, obvious button you can grab and drag.
+            Positioned at the track level, moves X only. */}
         <div
-          className="grab-disc"
+          className="grab-handle"
           style={{
             position: "absolute",
-            bottom: "8px",
+            bottom: "6px",
             left: hotdogLeft,
             transform: "translateX(-50%)",
             zIndex: 9,
             transition: isGrabbed ? "none" : "left 0.06s ease-out",
-            borderColor: isGrabbed ? accentColor : "#C9A84C",
-            boxShadow: isGrabbed
-              ? `0 4px 12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,240,190,0.32), inset 0 -2px 0 rgba(0,0,0,0.5), 0 0 14px ${accentColor}66`
-              : "0 4px 12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,240,190,0.32), inset 0 -2px 0 rgba(0,0,0,0.5), 0 0 10px #C9A84C22",
+            background: isGrabbed
+              ? `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}CC 100%)`
+              : "linear-gradient(135deg, #C9A84C 0%, #8B6914 100%)",
+            pointerEvents: "none", // Let the track handle the dragging
           }}
-        />
+        >
+          ⋮⋮
+        </div>
 
         {/* Track - v5.3.3: Increased height for easier grabbing */}
         <input

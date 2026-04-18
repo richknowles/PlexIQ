@@ -214,6 +214,8 @@ export default function Dashboard() {
   const [deleteSuccess,    setDeleteSuccess]    = useState(false);
   const [libError,         setLibError]         = useState("");
   const [globalCutList,    setGlobalCutList]    = useState<Map<string, Set<number>>>(new Map()); // libraryKey -> Set of movie IDs
+  const [sortBy,           setSortBy]           = useState<"title"|"score"|"size"|"rating"|"plays">("score");
+  const [sortDir,          setSortDir]          = useState<"asc"|"desc">("desc");
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SESSION PERSISTENCE v5.3.2 - Survives refresh, disconnect, accidental pulls
@@ -319,19 +321,47 @@ export default function Dashboard() {
 
   const selectedLibraryTitle = libraries.find(l => l.key === selectedSectionId)?.title || "";
 
-  // Filter based on 0-100 threshold and user selections
+  // Filter based on threshold only (selections are just visual checkmarks)
   const filteredMovies = movies.filter(m => {
-    // If nothing is manually selected, use threshold filter
-    if (selectedIds.size === 0) {
-      return m.score >= threshold && !fadingIds.has(m.id) && !untouchables.has(m.id);
-    }
-    // If items are manually selected, show only selected ones
-    return selectedIds.has(m.id) && !fadingIds.has(m.id) && !untouchables.has(m.id);
+    return m.score >= threshold && !fadingIds.has(m.id) && !untouchables.has(m.id);
   });
 
-  const visibleFiltered  = filteredMovies.slice(0, visibleCount);
-  const hasMore          = filteredMovies.length > visibleCount;
+  // Sort movies
+  const sortedMovies = [...filteredMovies].sort((a, b) => {
+    let comparison = 0;
+    switch (sortBy) {
+      case "title":
+        comparison = a.title.localeCompare(b.title);
+        break;
+      case "score":
+        comparison = a.score - b.score;
+        break;
+      case "size":
+        comparison = a.sizeBytes - b.sizeBytes;
+        break;
+      case "rating":
+        comparison = a.rating - b.rating;
+        break;
+      case "plays":
+        comparison = a.plays - b.plays;
+        break;
+    }
+    return sortDir === "asc" ? comparison : -comparison;
+  });
+
+  const visibleFiltered  = sortedMovies.slice(0, visibleCount);
+  const hasMore          = sortedMovies.length > visibleCount;
   const untouchableItems = movies.filter(m => untouchables.has(m.id));
+
+  // Toggle sort column
+  const handleSort = (column: typeof sortBy) => {
+    if (sortBy === column) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortDir(column === "title" ? "asc" : "desc"); // Title defaults to A-Z, others to high-low
+    }
+  };
 
   const toggleStar = (id: number) => {
     if (untouchables.has(id)) return;
@@ -348,16 +378,41 @@ export default function Dashboard() {
   };
 
   const toggleSelect = (id: number) => {
-    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      // Update global cut list for current library
+      setGlobalCutList(prevMap => {
+        const newMap = new Map(prevMap);
+        newMap.set(selectedSectionId, newSet);
+        return newMap;
+      });
+      return newSet;
+    });
   };
 
   const toggleSelectAll = () => {
     // If all visible items are selected, clear selection completely
     if (selectedIds.size > 0 && visibleFiltered.every(m => selectedIds.has(m.id))) {
       setSelectedIds(new Set());
+      setGlobalCutList(prev => {
+        const newMap = new Map(prev);
+        newMap.set(selectedSectionId, new Set());
+        return newMap;
+      });
     } else {
       // Select all visible items
-      setSelectedIds(new Set(visibleFiltered.map(m => m.id)));
+      const newSet = new Set(visibleFiltered.map(m => m.id));
+      setSelectedIds(newSet);
+      setGlobalCutList(prev => {
+        const newMap = new Map(prev);
+        newMap.set(selectedSectionId, newSet);
+        return newMap;
+      });
     }
   };
 
@@ -366,7 +421,14 @@ export default function Dashboard() {
     setIsAnalyzing(true);
     setVisibleCount(pageSize);
     setMovies([]);
-    setSelectedIds(new Set()); // Clear selections when analyzing new library
+
+    // Restore selections for this library from global cut list
+    const savedSelections = globalCutList.get(selectedSectionId);
+    if (savedSelections) {
+      setSelectedIds(savedSelections);
+    } else {
+      setSelectedIds(new Set());
+    }
 
     const stages = [
       { stage:"connecting", message:"Connecting to Plex...",          pct:10, duration:700  },
@@ -405,10 +467,6 @@ export default function Dashboard() {
       deletionCandidates:  candidates.length,
       potentialSpaceSaved: candidates.reduce((acc, m) => acc + m.sizeBytes, 0),
     });
-
-    // Update global cut list for this library
-    const currentLibraryIds = new Set(filteredMovies.map(m => m.id));
-    setGlobalCutList(prev => new Map(prev).set(selectedSectionId, currentLibraryIds));
 
     setIsAnalyzing(false);
     setActiveTab("analyze");
@@ -706,9 +764,32 @@ export default function Dashboard() {
                             checked={selectedIds.size === visibleFiltered.length && visibleFiltered.length > 0}
                             onChange={toggleSelectAll} />
                         </th>
-                        {["", "TITLE", "SCORE", "SIZE", "RTG", "PLAYS"].map(h => (
-                          <th key={h} style={{ padding:"10px 8px", textAlign:"left", fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.15em", color:"#4A3F28", fontWeight:400 }}>{h}</th>
-                        ))}
+                        <th style={{ padding:"10px 8px" }}></th>
+                        <th style={{ padding:"10px 8px", textAlign:"left", cursor:"pointer", userSelect:"none" }} onClick={() => handleSort("title")}>
+                          <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.15em", color: sortBy === "title" ? "#C9A84C" : "#4A3F28", fontWeight:400, display:"inline-flex", alignItems:"center", gap:"4px" }}>
+                            TITLE {sortBy === "title" && (sortDir === "asc" ? "↑" : "↓")}
+                          </span>
+                        </th>
+                        <th style={{ padding:"10px 8px", textAlign:"left", cursor:"pointer", userSelect:"none" }} onClick={() => handleSort("score")}>
+                          <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.15em", color: sortBy === "score" ? "#C9A84C" : "#4A3F28", fontWeight:400, display:"inline-flex", alignItems:"center", gap:"4px" }}>
+                            SCORE {sortBy === "score" && (sortDir === "asc" ? "↑" : "↓")}
+                          </span>
+                        </th>
+                        <th style={{ padding:"10px 8px", textAlign:"left", cursor:"pointer", userSelect:"none" }} onClick={() => handleSort("size")}>
+                          <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.15em", color: sortBy === "size" ? "#C9A84C" : "#4A3F28", fontWeight:400, display:"inline-flex", alignItems:"center", gap:"4px" }}>
+                            SIZE {sortBy === "size" && (sortDir === "asc" ? "↑" : "↓")}
+                          </span>
+                        </th>
+                        <th style={{ padding:"10px 8px", textAlign:"left", cursor:"pointer", userSelect:"none" }} onClick={() => handleSort("rating")}>
+                          <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.15em", color: sortBy === "rating" ? "#C9A84C" : "#4A3F28", fontWeight:400, display:"inline-flex", alignItems:"center", gap:"4px" }}>
+                            RTG {sortBy === "rating" && (sortDir === "asc" ? "↑" : "↓")}
+                          </span>
+                        </th>
+                        <th style={{ padding:"10px 8px", textAlign:"left", cursor:"pointer", userSelect:"none" }} onClick={() => handleSort("plays")}>
+                          <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.15em", color: sortBy === "plays" ? "#C9A84C" : "#4A3F28", fontWeight:400, display:"inline-flex", alignItems:"center", gap:"4px" }}>
+                            PLAYS {sortBy === "plays" && (sortDir === "asc" ? "↑" : "↓")}
+                          </span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
