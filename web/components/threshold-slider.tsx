@@ -201,27 +201,6 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
           </div>
         </div>
 
-        {/* ── GRAB HANDLE ──
-            Simple, obvious button you can grab and drag.
-            Positioned at the track level, moves X only. */}
-        <div
-          className="grab-handle"
-          style={{
-            position: "absolute",
-            bottom: "6px",
-            left: hotdogLeft,
-            transform: "translateX(-50%)",
-            zIndex: 9,
-            transition: isGrabbed ? "none" : "left 0.06s ease-out",
-            background: isGrabbed
-              ? `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}CC 100%)`
-              : "linear-gradient(135deg, #C9A84C 0%, #8B6914 100%)",
-            pointerEvents: "none", // Let the track handle the dragging
-          }}
-        >
-          ⋮⋮
-        </div>
-
         {/* Track - v5.3.3: Increased height for easier grabbing */}
         <input
           type="range"
@@ -241,10 +220,33 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
             boxShadow: isGrabbed ? "0 0 10px #C9A84C55" : "none",
             border: "1px solid #3A3020",
             transition: "box-shadow 0.15s",
-            height: "16px", // Increased from 10px for easier clicking
+            height: "16px",
             cursor: "grab",
+            position: "relative",
+            zIndex: 8,
           }}
         />
+
+        {/* ── GRAB HANDLE ──
+            Visual indicator positioned exactly on the track.
+            Moves with mousedown to show active dragging. */}
+        <div
+          className="grab-handle"
+          style={{
+            position: "absolute",
+            bottom: "-4px", // Aligned with track center (16px track / 2 - 24px handle / 2 = -4px)
+            left: hotdogLeft,
+            transform: "translateX(-50%)",
+            zIndex: 10, // Above track so it's visible
+            transition: isGrabbed ? "none" : "left 0.06s ease-out",
+            background: isGrabbed
+              ? `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}CC 100%)`
+              : "linear-gradient(135deg, #C9A84C 0%, #8B6914 100%)",
+            pointerEvents: "none", // Let the track handle the dragging
+          }}
+        >
+          ⋮⋮
+        </div>
       </div>
 
       {/* Label */}

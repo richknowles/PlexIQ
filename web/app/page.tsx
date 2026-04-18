@@ -535,6 +535,7 @@ export default function Dashboard() {
   const cancelConfirm = () => { setConfirmStep(0); setPassword(""); setPwdError(false); };
 
   const deleteTargets  = selectedIds.size > 0 ? selectedIds.size : filteredMovies.length;
+  const cutListCount   = selectedIds.size > 0 ? selectedIds.size : filteredMovies.length;
   const showPoliceLights = !isDryRun && confirmStep > 0;
 
   const ScoreCell = ({ score }: { score: number }) => {
@@ -665,7 +666,7 @@ export default function Dashboard() {
                 {isAnalyzing ? "ANALYZING..." : "🔍 ANALYZE LIBRARY"}
               </button>
               <button className="u-btn" onClick={() => setActiveTab("analyze")} disabled={!stats}>
-                THE CUT LIST ({stats ? filteredMovies.length : "—"})
+                THE CUT LIST ({stats ? cutListCount : "—"})
               </button>
               <button className="u-btn" onClick={() => setActiveTab("saved")}
                 style={{ borderColor:untouchables.size > 0 ? "#C9A84C88" : undefined, color:untouchables.size > 0 ? "#FFE066" : undefined }}>
@@ -751,8 +752,8 @@ export default function Dashboard() {
               <div className="deco-card" style={{ padding:0, overflow:"hidden" }}>
                 <div style={{ display:"flex", borderBottom:"1px solid #2A2318", padding:"0 16px" }}>
                   <button className={"tab-btn active"}>
-                    THE CUT LIST ({filteredMovies.length})
-                    {selectedIds.size > 0 && <span style={{ marginLeft:"8px", color:"#C9A84C", fontSize:"9px" }}>[{selectedIds.size} SELECTED]</span>}
+                    THE CUT LIST ({cutListCount})
+                    {selectedIds.size > 0 && selectedIds.size !== filteredMovies.length && <span style={{ marginLeft:"8px", color:"#4A3F28", fontSize:"9px" }}>(of {filteredMovies.length} candidates)</span>}
                   </button>
                 </div>
                 <div style={{ padding:"0 16px 16px", overflowX:"auto" }}>
