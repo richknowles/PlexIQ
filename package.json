@@ -1,7 +1,7 @@
 {
   "name": "plexiq",
-  "version": "4.0.0",
-  "description": "PlexIQ v4.0 ProxMenux Edition - Smart Plex Media Library Management with THE ONE SLIDER",
+  "version": "5.3.2",
+  "description": "PlexIQ v5.3.2 Production Ready Edition - Smart Plex Media Library Management",
   "main": "index.js",
   "directories": {
     "doc": "docs",

@@ -212,6 +212,57 @@ export default function Dashboard() {
   const [deleteSuccess,    setDeleteSuccess]    = useState(false);
   const [libError,         setLibError]         = useState("");
 
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SESSION PERSISTENCE v5.3.2 - Survives refresh, disconnect, accidental pulls
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // Restore session on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const savedLibrary = localStorage.getItem("plexiq_selectedLibrary");
+    const savedThreshold = localStorage.getItem("plexiq_threshold");
+    const savedDryRun = localStorage.getItem("plexiq_dryRun");
+    const savedStars = localStorage.getItem("plexiq_untouchables");
+
+    if (savedLibrary) setSelectedSectionId(savedLibrary);
+    if (savedThreshold) setThreshold(parseFloat(savedThreshold));
+    if (savedDryRun !== null) setIsDryRun(savedDryRun === "true");
+    if (savedStars) {
+      try {
+        const stars = JSON.parse(savedStars) as number[];
+        setUntouchables(new Set(stars));
+      } catch (e) {
+        console.warn("Could not restore starred items:", e);
+      }
+    }
+  }, []);
+
+  // Save session when key state changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (selectedSectionId) {
+      localStorage.setItem("plexiq_selectedLibrary", selectedSectionId);
+    }
+  }, [selectedSectionId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("plexiq_threshold", threshold.toString());
+  }, [threshold]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("plexiq_dryRun", isDryRun.toString());
+  }, [isDryRun]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("plexiq_untouchables", JSON.stringify([...untouchables]));
+  }, [untouchables]);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   // Fetch Plex library list — callable on mount AND on retry
   const fetchLibraries = () => {
     setLibError("");
@@ -377,7 +428,7 @@ export default function Dashboard() {
                   PLEXIQ
                 </h1>
                 <p style={{ margin:0, fontSize:"12px", letterSpacing:"0.25em", color:"#4A3F28", fontFamily:"var(--font-audiowide)", marginTop:"2px" }}>
-                  v5.3.1 · CHICAGO EDITION
+                  v5.3.2 · PRODUCTION READY EDITION
                 </p>
               </div>
             </div>
@@ -452,17 +503,26 @@ export default function Dashboard() {
                   >↺ RETRY</button>
                 </div>
               ) : (
-                <select
-                  value={selectedSectionId}
-                  onChange={e => setSelectedSectionId(e.target.value)}
-                  disabled={isAnalyzing}
-                  style={{ width:"100%", background:"#0D0A04", border:"1px solid #2A2318", color:"#C8B99A", padding:"10px 14px", fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.08em", cursor:"pointer", outline:"none" }}
-                >
-                  <option value="">CHOOSE LIBRARY...</option>
-                  {libraries.map(l => (
-                    <option key={l.key} value={l.key}>{l.title.toUpperCase()}</option>
-                  ))}
-                </select>
+                <>
+                  <select
+                    value={selectedSectionId}
+                    onChange={e => setSelectedSectionId(e.target.value)}
+                    disabled={isAnalyzing}
+                    style={{ width:"100%", background:"#0D0A04", border:"1px solid #2A2318", color:"#C8B99A", padding:"10px 14px", fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.08em", cursor:"pointer", outline:"none", marginBottom:"8px" }}
+                  >
+                    <option value="">CHOOSE LIBRARY...</option>
+                    {libraries.map(l => (
+                      <option key={l.key} value={l.key}>{l.title.toUpperCase()}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={fetchLibraries}
+                    disabled={isAnalyzing}
+                    style={{ width:"100%", background:"none", border:"1px solid #2A2318", color:"#6B5E3C", fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.1em", padding:"6px 8px", cursor:isAnalyzing?"not-allowed":"pointer", borderRadius:"2px", transition:"all 0.15s", opacity:isAnalyzing?0.3:1 }}
+                    onMouseEnter={e => { if(!isAnalyzing){ const b = e.currentTarget; b.style.borderColor="#C9A84C"; b.style.color="#C9A84C"; }}}
+                    onMouseLeave={e => { if(!isAnalyzing){ const b = e.currentTarget; b.style.borderColor="#2A2318"; b.style.color="#6B5E3C"; }}}
+                  >↺ RECONNECT TO PLEX</button>
+                </>
               )}
             </div>
 
@@ -521,7 +581,7 @@ export default function Dashboard() {
             {!stats && !isAnalyzing && (
               <div className="deco-card" style={{ padding:"64px 40px", textAlign:"center" }}>
                 <div style={{ fontSize:"72px", marginBottom:"20px" }}>🌭</div>
-                <h2 style={{ fontFamily:"var(--font-audiowide)", fontSize:"22px", letterSpacing:"0.1em", color:"#C9A84C", margin:"0 0 12px" }}>PLEXIQ v5.3.1</h2>
+                <h2 style={{ fontFamily:"var(--font-audiowide)", fontSize:"22px", letterSpacing:"0.1em", color:"#C9A84C", margin:"0 0 12px" }}>PLEXIQ v5.3.2</h2>
                 <p style={{ color:"#4A3F28", fontSize:"13px", lineHeight:1.7, maxWidth:"360px", margin:"0 auto 28px" }}>
                   Chicago, 1931. You run this library. One slider. You decide what stays and what goes.
                 </p>
@@ -620,7 +680,7 @@ export default function Dashboard() {
       <footer style={{ padding:"16px 24px", maxWidth:"1280px", margin:"0 auto" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.15em", color:"#E84040" }}>
-            PLEXIQ v5.3.1 ·{" "}
+            PLEXIQ v5.3.2 ·{" "}
             <a href="https://resume.richknowles.com" target="_blank" rel="noopener noreferrer" className="resume-link">RICH KNOWLES</a>
           </div>
           <div style={{ display:"flex", gap:"20px" }}>

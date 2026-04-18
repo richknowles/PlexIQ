@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * PlexIQ v4.0 - Terminal User Interface (TUI)
- * ProxMenux-inspired menu-driven interface
+ * PlexIQ v5.3.2 - Terminal User Interface (TUI)
+ * Production Ready Edition
  *
  * Design Philosophy:
- * - Clean, dialog-based navigation (like ProxMenux)
- * - THE ONE SLIDER in ASCII form
+ * - Clean, dialog-based navigation
+ * - THE HOTDOG SLIDER in ASCII form
  * - Keyboard-driven interaction
  * - Real-time status monitoring
+ * - Feature parity with Web UI
  */
 
 const blessed = require('blessed');
@@ -28,7 +29,7 @@ class PlexIQTUI {
   initScreen() {
     this.screen = blessed.screen({
       smartCSR: true,
-      title: 'PlexIQ v4.0 - ProxMenux Edition',
+      title: 'PlexIQ v5.3.2 - Production Ready Edition',
       fullUnicode: true,
     });
 
@@ -58,7 +59,7 @@ class PlexIQTUI {
       left: 0,
       width: '100%',
       height: 3,
-      content: '{center}{bold}PlexIQ v4.0{/bold} - ProxMenux Edition{/center}',
+      content: '{center}{bold}PlexIQ v5.3.2{/bold} - Production Ready Edition{/center}',
       tags: true,
       style: {
         fg: 'yellow',
@@ -111,7 +112,7 @@ class PlexIQTUI {
       left: 2,
       width: '95%',
       height: 8,
-      items: ['Movies', 'TV Shows', '4K Movies', 'Music'],
+      items: ['🧪 Demo Library', 'Movies', 'TV Shows', '4K Movies', 'Music'],
       keys: true,
       vi: true,
       mouse: true,
@@ -137,12 +138,12 @@ class PlexIQTUI {
       this.updateStatus();
     });
 
-    // THE ONE SLIDER Section
+    // THE HOTDOG SLIDER Section
     this.sliderLabel = blessed.text({
       parent: this.controlPanel,
       top: 12,
       left: 2,
-      content: '{bold}THE ONE SLIDER{/bold}\nDeletion Threshold',
+      content: '{bold}THE HOTDOG SLIDER 🌭{/bold}\nDeletion Threshold',
       tags: true,
       style: {
         fg: 'yellow',

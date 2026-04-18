@@ -24,6 +24,15 @@ export async function GET(req: NextRequest) {
   if (!sectionId)
     return NextResponse.json({ error: "Missing sectionId" }, { status: 400 });
 
+  // Handle demo library
+  if (sectionId === "demo") {
+    const demoRes = await fetch(
+      `${req.nextUrl.protocol}//${req.nextUrl.host}/api/demo`,
+      { cache: "no-store" }
+    );
+    return NextResponse.json(await demoRes.json());
+  }
+
   try {
     // Fetch all items (Plex paginates at 50 by default; request a large cap)
     const res = await fetch(
