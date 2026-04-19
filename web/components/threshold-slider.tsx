@@ -233,7 +233,7 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
           className="grab-handle"
           style={{
             position: "absolute",
-            bottom: "20px", // Center on 16px track (24px padding - 4px offset)
+            top: "54px", // Center on 16px track: paddingTop(58) - (handleHeight(24)-trackHeight(16))/2 = 54
             left: hotdogLeft,
             transform: "translateX(-50%)",
             zIndex: 10,
