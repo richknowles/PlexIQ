@@ -152,7 +152,7 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
       <div className="deco-line" />
 
       {/* Slider area */}
-      <div className="relative" style={{ paddingTop:"58px", paddingBottom:"24px", position:"relative" }}>
+      <div className="relative" style={{ paddingTop:"58px", paddingBottom:"24px", position:"relative", display:"flex", alignItems:"center" }}>
 
         {/* ── HOTDOG ASSEMBLY ──
             Floats above the track and bobs freely.
@@ -224,16 +224,16 @@ export default function ThresholdSlider({ value, onChange, disabled = false }: T
             cursor: "grab",
             position: "relative",
             zIndex: 8,
+            margin: 0,
           }}
         />
 
         {/* ── GRAB HANDLE ──
-            Positioned to align exactly with the track center. */}
+            Positioned absolutely and vertically centered via flex parent. */}
         <div
           className="grab-handle"
           style={{
             position: "absolute",
-            top: "54px", // Center on 16px track: paddingTop(58) - (handleHeight(24)-trackHeight(16))/2 = 54
             left: hotdogLeft,
             transform: "translateX(-50%)",
             zIndex: 10,
