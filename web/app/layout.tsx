@@ -16,7 +16,7 @@ const audiowide = Audiowide({
 });
 
 export const metadata: Metadata = {
-  title: "PlexIQ v5.1 - Smart Media Management",
+  title: "PlexIQ v5.3.3 - Smart Media Management",
   description: "Intelligent Plex library management. One slider. No drama.",
 };
 

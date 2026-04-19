@@ -300,6 +300,23 @@ export default function Dashboard() {
     localStorage.setItem("plexiq_globalCutList", JSON.stringify(obj));
   }, [globalCutList]);
 
+  // Recalculate deletion candidates when threshold, movies, or untouchables change
+  useEffect(() => {
+    if (movies.length === 0) return;
+
+    const minScore = 100 - threshold;
+    const candidates = movies.filter(m => m.score >= minScore && !untouchables.has(m.id));
+
+    setStats(prevStats => {
+      if (!prevStats) return prevStats;
+      return {
+        ...prevStats,
+        deletionCandidates: candidates.length,
+        potentialSpaceSaved: candidates.reduce((acc, m) => acc + m.sizeBytes, 0),
+      };
+    });
+  }, [threshold, movies, untouchables]);
+
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   // Fetch Plex library list — callable on mount AND on retry
