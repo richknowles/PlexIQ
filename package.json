@@ -1,7 +1,7 @@
 {
   "name": "plexiq",
-  "version": "5.3.3",
-  "description": "PlexIQ v5.3.2 Chicago Edition - Smart Plex Media Library Management",
+  "version": "5.3.4",
+  "description": "PlexIQ v5.3.4 Chicago Edition - Smart Plex Media Library Management",
   "main": "index.js",
   "directories": {
     "doc": "docs",
