@@ -1,7 +1,7 @@
-# PlexIQ v5.3.3 — The Chicago Edition 🌭
+# PlexIQ v5.3.4 — The Chicago Edition 🌭
 
 <p align="center">
-  <img src="plexiq-demo.gif" alt="PlexIQ v5.3.3 demo" width="900" />
+  <img src="plexiq-demo.gif" alt="PlexIQ v5.3.4 demo" width="900" />
 </p>
 
 ---
@@ -22,14 +22,24 @@ PlexIQ analyzes your Plex library using multi-factor scoring (play count, rating
 
 ---
 
-## ✨ What's New in v5.3.3
+## ✨ What's New in v5.3.4
 
-### UX Polish & Refinements
+### Chicago Mob Edition Features
 
-- **🎯 Perfected Hotdog Slider** - Grab handle now perfectly centered on track using flexbox (finally!)
-- **🎨 Color Palette Documentation** - Complete hex code reference in COLOR_PALETTE.md
-- **📊 Live Deletion Count** - Deletion candidates number updates in real-time as you move the slider
-- **🏷️ Consistent Version Tags** - All UI elements and browser tab now show v5.3.3
+- **🎯 Shooting Range Animation** - Deleted movies get a target lock → three shots (boom boom boom) → fade out
+- **💀 THE HIT LIST** - Renamed from "Cut List" — movies awaiting their fate
+- **🕊️ IN REMEMBRANCE** - Deleted movie history with grouping by session, total body count displayed
+- **🗑️ Animated Wastebasket** - Fills up as movies are selected, pulses red at 10+ selections
+- **📝 Deletion Banner** - Shows "THE HIT IS COMPLETE" with titles of casualties (persistent, no auto-dismiss)
+- **📄 Page Numbers** - Replaced "Load More" with proper ◄ 1 2 [3] ... 8 ► pagination
+- **🎨 Smaller Header** - PLEXIQ 24px / Hotdog 44px for cleaner layout
+
+### v5.3.3 - UX Polish
+
+- **Perfected Hotdog Slider** - Grab handle centered on track via flexbox
+- **Color Palette Documentation** - Complete hex codes in COLOR_PALETTE.md
+- **Live Deletion Count** - Candidates update in real-time as slider moves
+- **Consistent Version Tags** - All UI elements aligned
 
 ### v5.3.2 - Chicago Edition Features
 

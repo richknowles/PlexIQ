@@ -113,82 +113,50 @@ const CSS = `
   }
   .fading-out td { animation:fadeRowOut 0.38s ease-in forwards; overflow:hidden; }
 
-  /* ── Shooting Range Deletion Animation (v5.3.4.2) ── */
-  @keyframes targetAppear {
-    0%   { opacity:0; transform:scale(0.5); }
-    100% { opacity:1; transform:scale(1); }
-  }
-  @keyframes bulletHit {
-    0%   { opacity:0; transform:scale(0); }
-    50%  { opacity:1; transform:scale(1.3); }
-    100% { opacity:1; transform:scale(1); }
-  }
-  @keyframes rowHitFade {
-    0%   { opacity:1; transform:scale(1); background:transparent; }
-    30%  { background:#8B1C1C22; }
-    100% { opacity:0; transform:scale(0.95); background:#8B1C1C44; }
+  /* ── Shooting Range Deletion Animation (v5.3.4.2) ──
+     NOTE: ::before/::after don't work on <tr> in browsers.
+     All animations applied to <td> cells directly. */
+
+  @keyframes targetLock {
+    0%   { background:transparent; box-shadow:inset 0 0 0 0px #E84040; }
+    25%  { background:#8B1C1C33; box-shadow:inset 0 0 0 2px #E84040; }
+    50%  { background:transparent; box-shadow:inset 0 0 0 0px #E84040; }
+    75%  { background:#8B1C1C44; box-shadow:inset 0 0 0 2px #E84040CC; }
+    100% { background:#8B1C1C33; box-shadow:inset 0 0 0 2px #E84040; }
   }
 
-  .hit-target {
-    position:relative;
+  @keyframes shotFlash1 {
+    0%,39%  { background:#8B1C1C33; }
+    40%,50% { background:#E8404099; box-shadow:inset 0 0 20px #E84040; }
+    51%     { background:#8B1C1C33; }
+    100%    { background:#8B1C1C33; }
   }
-  .hit-target::before {
-    content:"🎯";
-    position:absolute;
-    left:50%;
-    top:50%;
-    transform:translate(-50%, -50%);
-    font-size:40px;
-    z-index:100;
-    animation:targetAppear 0.3s ease-out forwards;
-    pointer-events:none;
+  @keyframes shotFlash2 {
+    0%,59%  { background:#8B1C1C33; }
+    60%,70% { background:#E8404099; box-shadow:inset 0 0 20px #E84040; }
+    71%     { background:#8B1C1C33; }
+    100%    { background:#8B1C1C33; }
+  }
+  @keyframes shotFlash3 {
+    0%,79%  { background:#8B1C1C33; }
+    80%,90% { background:#E8404099; box-shadow:inset 0 0 20px #E84040; }
+    91%     { background:#8B1C1C22; }
+    100%    { background:transparent; opacity:0; max-height:0; padding:0; }
   }
 
-  .hit-row {
-    position:relative;
+  /* Phase 1: Target lock (red flash pulsing) */
+  .hit-target td {
+    animation:targetLock 0.5s ease-in-out forwards;
   }
-  .hit-row td {
-    animation:rowHitFade 1.5s ease-out 1.2s forwards;
-  }
-  /* 3 bullet holes appearing sequentially */
-  .hit-row::after {
-    content:"💥";
-    position:absolute;
-    left:20%;
-    top:50%;
-    transform:translate(-50%, -50%);
-    font-size:24px;
-    z-index:90;
-    animation:bulletHit 0.3s ease-out 0.3s forwards;
-    opacity:0;
-    pointer-events:none;
-  }
-  .hit-row::before {
-    content:"💥";
-    position:absolute;
-    left:50%;
-    top:50%;
-    transform:translate(-50%, -50%);
-    font-size:24px;
-    z-index:90;
-    animation:bulletHit 0.3s ease-out 0.6s forwards;
-    opacity:0;
-    pointer-events:none;
-  }
-  /* Third bullet hole using a data attribute trick */
-  .hit-row[data-movie-id]::after {
-    content:"💥 💥";
-    letter-spacing:60vw;
-    left:30%;
-    animation:bulletHit 0.3s ease-out 0.9s forwards;
-  }
+
+  /* Phase 2+3: Three shots then collapse */
+  .hit-row td:nth-child(1) { animation:shotFlash1 2.0s ease-out forwards, fadeRowOut 0.4s ease-in 2.0s forwards; }
+  .hit-row td:nth-child(2) { animation:shotFlash2 2.0s ease-out forwards, fadeRowOut 0.4s ease-in 2.0s forwards; }
+  .hit-row td:nth-child(n+3) { animation:shotFlash3 2.0s ease-out forwards, fadeRowOut 0.4s ease-in 2.0s forwards; overflow:hidden; }
 
   /* Respect prefers-reduced-motion */
   @media (prefers-reduced-motion: reduce) {
-    .hit-row td {
-      animation:fadeRowOut 0.25s ease-in forwards !important;
-    }
-    .hit-target::before { display:none; }
+    .hit-target td, .hit-row td { animation:fadeRowOut 0.25s ease-in forwards !important; }
   }
 
   /* ── Confirmation modal ── */
@@ -448,12 +416,10 @@ export default function Dashboard() {
   // Higher threshold = more aggressive = more candidates shown
   const filteredMovies = movies.filter(m => {
     const minScore = 100 - threshold; // Invert: threshold 0 = need score 100, threshold 100 = need score 0
-    // Exclude: fading (starred), untouchables, crumpling/sliding (being deleted)
+    // Keep crumpling/sliding rows in DOM so CSS animations can play
     return m.score >= minScore
       && !fadingIds.has(m.id)
-      && !untouchables.has(m.id)
-      && !crumplingIds.has(m.id)
-      && !slidingIds.has(m.id);
+      && !untouchables.has(m.id);
   });
 
   // Sort movies
@@ -770,7 +736,7 @@ export default function Dashboard() {
                   PLEXIQ
                 </h1>
                 <p style={{ margin:0, fontSize:"12px", letterSpacing:"0.25em", color:"#4A3F28", fontFamily:"var(--font-audiowide)", marginTop:"2px" }}>
-                  v5.3.3 · CHICAGO EDITION
+                  v5.3.4 · CHICAGO EDITION
                 </p>
               </div>
             </div>
@@ -886,7 +852,7 @@ export default function Dashboard() {
               </button>
               <button className="u-btn" onClick={() => setActiveTab("hitlist")}
                 style={{ borderColor:hitList.length > 0 ? "#E8404088" : undefined, color:hitList.length > 0 ? "#E87070" : undefined }}>
-                🕊️ IN REMEMBRANCE ({hitList.length})
+                🕊️ IN REMEMBRANCE ({hitList.reduce((sum, h) => sum + h.count, 0)})
               </button>
               <button
                 className={"u-btn danger" + (!isDryRun ? " live" : "")}
