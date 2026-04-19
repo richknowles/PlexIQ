@@ -113,46 +113,34 @@ const CSS = `
   }
   .fading-out td { animation:fadeRowOut 0.38s ease-in forwards; overflow:hidden; }
 
-  /* ── Shooting Range Deletion Animation (v5.3.4.2) ──
-     NOTE: ::before/::after don't work on <tr> in browsers.
-     All animations applied to <td> cells directly. */
+  /* ── Shooting Range Deletion Animation (v5.3.4.3 - DEBUG VERSION) ──
+     USING BRIGHT NEON COLORS TO DEBUG VISIBILITY */
 
   @keyframes targetLock {
-    0%   { background:transparent; box-shadow:inset 0 0 0 0px #E84040; }
-    25%  { background:#8B1C1C33; box-shadow:inset 0 0 0 2px #E84040; }
-    50%  { background:transparent; box-shadow:inset 0 0 0 0px #E84040; }
-    75%  { background:#8B1C1C44; box-shadow:inset 0 0 0 2px #E84040CC; }
-    100% { background:#8B1C1C33; box-shadow:inset 0 0 0 2px #E84040; }
+    0%   { background:#00FF00; transform:scale(1.2); }
+    50%  { background:#FFFF00; transform:scale(1.1); }
+    100% { background:#00FF00; transform:scale(1.2); }
   }
 
-  @keyframes shotFlash1 {
-    0%,39%  { background:#8B1C1C33; }
-    40%,50% { background:#E8404099; box-shadow:inset 0 0 20px #E84040; }
-    51%     { background:#8B1C1C33; }
-    100%    { background:#8B1C1C33; }
-  }
-  @keyframes shotFlash2 {
-    0%,59%  { background:#8B1C1C33; }
-    60%,70% { background:#E8404099; box-shadow:inset 0 0 20px #E84040; }
-    71%     { background:#8B1C1C33; }
-    100%    { background:#8B1C1C33; }
-  }
-  @keyframes shotFlash3 {
-    0%,79%  { background:#8B1C1C33; }
-    80%,90% { background:#E8404099; box-shadow:inset 0 0 20px #E84040; }
-    91%     { background:#8B1C1C22; }
-    100%    { background:transparent; opacity:0; max-height:0; padding:0; }
+  @keyframes shotImpact {
+    0%   { background:#00FF00; }
+    25%  { background:#FF00FF; transform:scale(1.3); box-shadow:0 0 40px #FF00FF; }
+    50%  { background:#00FFFF; transform:scale(1.2); box-shadow:0 0 40px #00FFFF; }
+    75%  { background:#FFFF00; transform:scale(1.1); box-shadow:0 0 40px #FFFF00; }
+    100% { background:#FF0000; transform:scale(0.8); opacity:0; max-height:0; padding:0; }
   }
 
-  /* Phase 1: Target lock (red flash pulsing) */
+  /* Phase 1: Target lock - BRIGHT GREEN */
   .hit-target td {
-    animation:targetLock 0.5s ease-in-out forwards;
+    animation:targetLock 1.0s ease-in-out infinite !important;
+    background:#00FF00 !important;
   }
 
-  /* Phase 2+3: Three shots then collapse */
-  .hit-row td:nth-child(1) { animation:shotFlash1 2.0s ease-out forwards, fadeRowOut 0.4s ease-in 2.0s forwards; }
-  .hit-row td:nth-child(2) { animation:shotFlash2 2.0s ease-out forwards, fadeRowOut 0.4s ease-in 2.0s forwards; }
-  .hit-row td:nth-child(n+3) { animation:shotFlash3 2.0s ease-out forwards, fadeRowOut 0.4s ease-in 2.0s forwards; overflow:hidden; }
+  /* Phase 2+3: Shot impacts - NEON RAINBOW then collapse */
+  .hit-row td {
+    animation:shotImpact 3.0s ease-out forwards !important;
+    overflow:hidden;
+  }
 
   /* Respect prefers-reduced-motion */
   @media (prefers-reduced-motion: reduce) {
@@ -257,6 +245,7 @@ export default function Dashboard() {
   const [movies,           setMovies]           = useState<PlexMovie[]>([]);
   const [activeTab,        setActiveTab]        = useState<"analyze"|"saved"|"hitlist">("analyze");
   const [hitList,          setHitList]          = useState<Array<{timestamp: string; titles: string[]; count: number; bytesFreed: number}>>([]);
+  const [hitListSort,      setHitListSort]      = useState<"newest"|"oldest">("newest");
   const [untouchables,     setUntouchables]     = useState<Set<number>>(new Set());
   const [fadingIds,        setFadingIds]        = useState<Set<number>>(new Set());
   const [selectedIds,      setSelectedIds]      = useState<Set<number>>(new Set());
@@ -954,18 +943,68 @@ export default function Dashboard() {
             )}
 
             {/* ── IN REMEMBRANCE PANEL ── */}
-            {activeTab === "hitlist" && (
+            {activeTab === "hitlist" && (() => {
+              const totalBytesFreed = hitList.reduce((sum, h) => sum + h.bytesFreed, 0);
+              const formatSize = (bytes: number): string => {
+                const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                let size = bytes;
+                let unitIndex = 0;
+                while (size >= 1024 && unitIndex < units.length - 1) {
+                  size /= 1024;
+                  unitIndex++;
+                }
+                return `${size.toFixed(2)} ${units[unitIndex]}`;
+              };
+              const sortedHitList = hitListSort === "newest"
+                ? [...hitList].reverse()
+                : [...hitList];
+
+              return (
               <div className="deco-card" style={{ padding:"24px", background:"linear-gradient(160deg,#1A0808 0%,#0D0404 100%)" }}>
-                <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"16px", letterSpacing:"0.12em", color:"#E84040", marginBottom:"20px", textAlign:"center", textShadow:"0 0 16px rgba(232,64,64,0.4)" }}>
-                  🕊️ IN REMEMBRANCE 🕊️
+                {/* Header with total GB */}
+                <div style={{ textAlign:"center", marginBottom:"20px" }}>
+                  <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"16px", letterSpacing:"0.12em", color:"#E84040", marginBottom:"8px", textShadow:"0 0 16px rgba(232,64,64,0.4)" }}>
+                    🕊️ IN REMEMBRANCE 🕊️
+                  </div>
+                  {hitList.length > 0 && (
+                    <div style={{ fontSize:"12px", color:"#8B6060", fontStyle:"italic" }}>
+                      {formatSize(totalBytesFreed)} Sleeps with the fishes 🐟
+                    </div>
+                  )}
                 </div>
+
+                {/* Sort button */}
+                {hitList.length > 1 && (
+                  <div style={{ display:"flex", justifyContent:"center", marginBottom:"16px" }}>
+                    <button
+                      onClick={() => setHitListSort(s => s === "newest" ? "oldest" : "newest")}
+                      style={{
+                        background:"linear-gradient(135deg, #2A0808 0%, #1A0404 100%)",
+                        border:"1px solid #4A1818",
+                        color:"#C05050",
+                        fontFamily:"var(--font-audiowide)",
+                        fontSize:"9px",
+                        letterSpacing:"0.1em",
+                        padding:"8px 16px",
+                        cursor:"pointer",
+                        borderRadius:"2px",
+                        transition:"all 0.15s",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#E84040"; e.currentTarget.style.color = "#E84040"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#4A1818"; e.currentTarget.style.color = "#C05050"; }}
+                    >
+                      {hitListSort === "newest" ? "↓ NEWEST FIRST" : "↑ OLDEST FIRST"}
+                    </button>
+                  </div>
+                )}
+
                 {hitList.length === 0 ? (
                   <div style={{ textAlign:"center", padding:"40px 20px", color:"#6B4040", fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.12em" }}>
                     NO DEPARTED SOULS YET — DELETE SOME MOVIES IN LIVE MODE
                   </div>
                 ) : (
                   <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
-                    {[...hitList].reverse().map((hit, idx) => {
+                    {sortedHitList.map((hit, idx) => {
                       const date = new Date(hit.timestamp);
                       const formatSize = (bytes: number): string => {
                         const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -988,7 +1027,7 @@ export default function Dashboard() {
                           {/* Header Row */}
                           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px" }}>
                             <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.1em", color:"#C05050" }}>
-                              HIT #{hitList.length - idx}
+                              HIT #{hitListSort === "newest" ? hitList.length - idx : idx + 1}
                             </div>
                             <div style={{ fontSize:"11px", color:"#6B4040" }}>
                               {date.toLocaleDateString()} {date.toLocaleTimeString()}
@@ -1029,7 +1068,8 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-            )}
+              );
+            })()}
 
             {/* ── THE HIT LIST TABLE ── */}
             {stats && !isAnalyzing && activeTab === "analyze" && (
