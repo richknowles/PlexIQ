@@ -113,41 +113,82 @@ const CSS = `
   }
   .fading-out td { animation:fadeRowOut 0.38s ease-in forwards; overflow:hidden; }
 
-  /* ── Deletion animations (v5.3.4) ── */
-  @keyframes crumplePaper {
-    0%   { transform:scale(1) rotateX(0) skewX(0); background:transparent; }
-    50%  { transform:scale(0.95) rotateX(5deg) skewX(-2deg); background:#1A1408; }
-    100% { transform:scale(0.92) rotateX(8deg) skewX(-3deg); background:#1C1204; }
+  /* ── Shooting Range Deletion Animation (v5.3.4.2) ── */
+  @keyframes targetAppear {
+    0%   { opacity:0; transform:scale(0.5); }
+    100% { opacity:1; transform:scale(1); }
   }
-  @keyframes slideToTrash {
-    0%   { transform:translateX(0) rotateZ(0deg); opacity:1; }
-    70%  { opacity:0.4; }
-    100% { transform:translateX(120%) rotateZ(-12deg); opacity:0; }
+  @keyframes bulletHit {
+    0%   { opacity:0; transform:scale(0); }
+    50%  { opacity:1; transform:scale(1.3); }
+    100% { opacity:1; transform:scale(1); }
   }
-  @keyframes dustPuff {
-    0%   { opacity:0; transform:scale(0.5) translateY(0); }
-    30%  { opacity:0.6; transform:scale(1.2) translateY(-8px); }
-    100% { opacity:0; transform:scale(2) translateY(-16px); }
-  }
-  @keyframes goldParticle {
-    0%   { transform:translateY(0) scale(1); opacity:1; }
-    100% { transform:translateY(-80px) translateX(var(--drift)) scale(0.3); opacity:0; }
+  @keyframes rowHitFade {
+    0%   { opacity:1; transform:scale(1); background:transparent; }
+    30%  { background:#8B1C1C22; }
+    100% { opacity:0; transform:scale(0.95); background:#8B1C1C44; }
   }
 
-  .crumpling td {
-    animation:crumplePaper 0.4s ease-out forwards;
-    will-change:transform;
+  .hit-target {
+    position:relative;
   }
-  .sliding-to-trash td {
-    animation:slideToTrash 0.8s ease-out forwards;
-    will-change:transform, opacity;
+  .hit-target::before {
+    content:"🎯";
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%, -50%);
+    font-size:40px;
+    z-index:100;
+    animation:targetAppear 0.3s ease-out forwards;
+    pointer-events:none;
+  }
+
+  .hit-row {
+    position:relative;
+  }
+  .hit-row td {
+    animation:rowHitFade 1.5s ease-out 1.2s forwards;
+  }
+  /* 3 bullet holes appearing sequentially */
+  .hit-row::after {
+    content:"💥";
+    position:absolute;
+    left:20%;
+    top:50%;
+    transform:translate(-50%, -50%);
+    font-size:24px;
+    z-index:90;
+    animation:bulletHit 0.3s ease-out 0.3s forwards;
+    opacity:0;
+    pointer-events:none;
+  }
+  .hit-row::before {
+    content:"💥";
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%, -50%);
+    font-size:24px;
+    z-index:90;
+    animation:bulletHit 0.3s ease-out 0.6s forwards;
+    opacity:0;
+    pointer-events:none;
+  }
+  /* Third bullet hole using a data attribute trick */
+  .hit-row[data-movie-id]::after {
+    content:"💥 💥";
+    letter-spacing:60vw;
+    left:30%;
+    animation:bulletHit 0.3s ease-out 0.9s forwards;
   }
 
   /* Respect prefers-reduced-motion */
   @media (prefers-reduced-motion: reduce) {
-    .crumpling td, .sliding-to-trash td {
+    .hit-row td {
       animation:fadeRowOut 0.25s ease-in forwards !important;
     }
+    .hit-target::before { display:none; }
   }
 
   /* ── Confirmation modal ── */
@@ -615,16 +656,24 @@ export default function Dashboard() {
         setConfirmStep(0);
         setPassword("");
 
-        // Phase 1: Crumple animation (1000ms - made slower to be visible)
-        setCrumplingIds(toDeleteIds);
-        await new Promise(r => setTimeout(r, 1000));
+        // SHOOTING RANGE ANIMATION
+        // Phase 1: Target appears on each row (300ms)
+        console.log("🎯 Phase 1: Showing targets on", toDeleteIds.size, "rows");
+        setCrumplingIds(toDeleteIds); // Reuse for target state
+        await new Promise(r => setTimeout(r, 500));
 
-        // Phase 2: Slide-to-trash animation (1200ms - extended for visibility)
-        setSlidingIds(toDeleteIds);
-        // Keep crumpling class active during slide for smoother transition
-        await new Promise(r => setTimeout(r, 600));
-        setCrumplingIds(new Set()); // Clear halfway through slide
-        await new Promise(r => setTimeout(r, 600));
+        // Phase 2: BOOM BOOM BOOM - bullet holes (simulate with visual feedback)
+        console.log("💥 Phase 2: BOOM BOOM BOOM");
+        // We'll show this via CSS animation on the rows
+        setSlidingIds(toDeleteIds); // Reuse for hit state
+
+        // Wait for 3 shots to land (0.4s each = 1.2s total)
+        await new Promise(r => setTimeout(r, 1200));
+
+        // Phase 3: Rows fade out after being hit (1.5s)
+        console.log("👻 Phase 3: Rows fading out");
+        setCrumplingIds(new Set()); // Clear target state
+        await new Promise(r => setTimeout(r, 1500));
 
         // Phase 3: Execute actual deletion API call
         const ratingKeys = toDelete.map(m => m.ratingKey);
@@ -687,7 +736,7 @@ export default function Dashboard() {
 
   const cancelConfirm = () => { setConfirmStep(0); setPassword(""); setPwdError(false); };
 
-  // CUT LIST = ONLY manually checked items (must explicitly check to delete)
+  // HIT LIST = ONLY manually checked items (must explicitly check to delete)
   const cutListCount   = selectedIds.size; // Only checked items get deleted
   const deleteTargets  = selectedIds.size; // Same - only checked items
   const showPoliceLights = !isDryRun && confirmStep > 0;
@@ -715,9 +764,9 @@ export default function Dashboard() {
         <div style={{ maxWidth:"1280px", margin:"0 auto", padding:"8px 24px" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div style={{ display:"flex", alignItems:"center", gap:"16px" }}>
-              <div style={{ fontSize:"62px", lineHeight:1, userSelect:"none" }}>🌭</div>
+              <div style={{ fontSize:"44px", lineHeight:1, userSelect:"none" }}>🌭</div>
               <div>
-                <h1 style={{ fontFamily:"var(--font-audiowide)", fontSize:"38px", letterSpacing:"0.06em", background:"linear-gradient(135deg,#E8C96C 0%,#C9A84C 50%,#8B6914 100%)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", margin:0 }}>
+                <h1 style={{ fontFamily:"var(--font-audiowide)", fontSize:"24px", letterSpacing:"0.06em", background:"linear-gradient(135deg,#E8C96C 0%,#C9A84C 50%,#8B6914 100%)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", margin:0 }}>
                   PLEXIQ
                 </h1>
                 <p style={{ margin:0, fontSize:"12px", letterSpacing:"0.25em", color:"#4A3F28", fontFamily:"var(--font-audiowide)", marginTop:"2px" }}>
@@ -828,7 +877,7 @@ export default function Dashboard() {
                 {isAnalyzing ? "ANALYZING..." : "🔍 ANALYZE LIBRARY"}
               </button>
               <button className="u-btn" onClick={() => setActiveTab("analyze")} disabled={!stats}>
-                THE CUT LIST ({stats ? cutListCount : "—"})
+                🎯 THE HIT LIST ({stats ? cutListCount : "—"})
                 {stats && cutListCount === 0 && <span style={{ marginLeft:"4px", fontSize:"9px", color:"#6B5E3C" }}>(check items to delete)</span>}
               </button>
               <button className="u-btn" onClick={() => setActiveTab("saved")}
@@ -837,7 +886,7 @@ export default function Dashboard() {
               </button>
               <button className="u-btn" onClick={() => setActiveTab("hitlist")}
                 style={{ borderColor:hitList.length > 0 ? "#E8404088" : undefined, color:hitList.length > 0 ? "#E87070" : undefined }}>
-                💀 THE HIT LIST ({hitList.length})
+                🕊️ IN REMEMBRANCE ({hitList.length})
               </button>
               <button
                 className={"u-btn danger" + (!isDryRun ? " live" : "")}
@@ -849,7 +898,7 @@ export default function Dashboard() {
                 }}
               >
                 {isDryRun
-                  ? `🌭 CUT LIST${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""} (DRY RUN)`
+                  ? `🌭 HIT LIST${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""} (DRY RUN)`
                   : `${getWastebasketIcon()} DELETE ${selectedIds.size > 0 ? selectedIds.size : filteredMovies.length} FILES — LIVE`}
                 {/* Body count badge when items selected */}
                 {!isDryRun && selectedIds.size > 0 && (
@@ -938,15 +987,15 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* ── THE HIT LIST PANEL ── */}
+            {/* ── IN REMEMBRANCE PANEL ── */}
             {activeTab === "hitlist" && (
               <div className="deco-card" style={{ padding:"24px", background:"linear-gradient(160deg,#1A0808 0%,#0D0404 100%)" }}>
                 <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"16px", letterSpacing:"0.12em", color:"#E84040", marginBottom:"20px", textAlign:"center", textShadow:"0 0 16px rgba(232,64,64,0.4)" }}>
-                  💀 THE HIT LIST 💀
+                  🕊️ IN REMEMBRANCE 🕊️
                 </div>
                 {hitList.length === 0 ? (
                   <div style={{ textAlign:"center", padding:"40px 20px", color:"#6B4040", fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.12em" }}>
-                    NO HITS RECORDED YET — DELETE SOME MOVIES IN LIVE MODE
+                    NO DEPARTED SOULS YET — DELETE SOME MOVIES IN LIVE MODE
                   </div>
                 ) : (
                   <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
@@ -1016,12 +1065,12 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* ── THE CUT LIST TABLE ── */}
+            {/* ── THE HIT LIST TABLE ── */}
             {stats && !isAnalyzing && activeTab === "analyze" && (
               <div className="deco-card" style={{ padding:0, overflow:"hidden" }}>
                 <div style={{ display:"flex", borderBottom:"1px solid #2A2318", padding:"0 16px" }}>
                   <button className={"tab-btn active"}>
-                    THE CUT LIST ({cutListCount})
+                    🎯 THE HIT LIST ({cutListCount})
                     {cutListCount === 0 && <span style={{ marginLeft:"8px", color:"#6B5E3C", fontSize:"9px" }}>(check items you want to delete)</span>}
                     {cutListCount > 0 && filteredMovies.length > cutListCount && <span style={{ marginLeft:"8px", color:"#4A3F28", fontSize:"9px" }}>(of {filteredMovies.length} candidates)</span>}
                   </button>
@@ -1068,8 +1117,8 @@ export default function Dashboard() {
                         const rowClasses = [
                           "result-row",
                           fadingIds.has(m.id) && "fading-out",
-                          crumplingIds.has(m.id) && "crumpling",
-                          slidingIds.has(m.id) && "sliding-to-trash",
+                          crumplingIds.has(m.id) && "hit-target", // Target appears
+                          slidingIds.has(m.id) && "hit-row", // Row gets hit and fades
                         ].filter(Boolean).join(" ");
 
                         return (
