@@ -9,10 +9,11 @@ interface DeletionFeedbackProps {
   count: number;
   bytesFreed: number;
   executionTime: number;
+  titles: string[];
   onDismiss: () => void;
 }
 
-export default function DeletionFeedback({ count, bytesFreed, executionTime, onDismiss }: DeletionFeedbackProps) {
+export default function DeletionFeedback({ count, bytesFreed, executionTime, titles, onDismiss }: DeletionFeedbackProps) {
   const formatSize = (bytes: number): string => {
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let size = bytes;
@@ -26,9 +27,11 @@ export default function DeletionFeedback({ count, bytesFreed, executionTime, onD
     return `${size.toFixed(2)} ${units[unitIndex]}`;
   };
 
+  const displayTitles = titles.slice(0, 8);
+  const remainingCount = Math.max(0, count - 8);
+
   return (
     <div
-      onClick={onDismiss}
       className="deletion-success-banner"
       style={{
         position: "fixed",
@@ -39,14 +42,14 @@ export default function DeletionFeedback({ count, bytesFreed, executionTime, onD
         background: "linear-gradient(135deg, #0D2A0D 0%, #1A4520 100%)",
         border: "2px solid #C9A84C",
         borderRadius: "8px",
-        padding: "20px 32px",
-        minWidth: "400px",
+        padding: "24px 32px",
+        minWidth: "500px",
+        maxWidth: "700px",
         boxShadow: `
           0 8px 24px rgba(0,0,0,0.8),
           inset 0 1px 0 rgba(201,168,76,0.3),
           0 0 32px rgba(201,168,76,0.25)
         `,
-        cursor: "pointer",
         animation: "trashBounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
       }}
     >
@@ -92,7 +95,8 @@ export default function DeletionFeedback({ count, bytesFreed, executionTime, onD
         borderRadius: "0 0 8px 0",
       }} />
 
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+      {/* Header Row */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", marginBottom: "16px" }}>
         {/* Animated Trash Icon */}
         <div style={{
           fontSize: "42px",
@@ -112,15 +116,16 @@ export default function DeletionFeedback({ count, bytesFreed, executionTime, onD
             marginBottom: "8px",
             textShadow: "0 0 12px rgba(201,168,76,0.4)",
           }}>
-            DELETION COMPLETE
+            THE HIT IS COMPLETE
           </div>
 
           {/* Stats */}
           <div style={{
             display: "flex",
-            gap: "24px",
+            gap: "20px",
             fontSize: "13px",
             color: "#9ABF9E",
+            flexWrap: "wrap",
           }}>
             <span>
               <span style={{
@@ -130,7 +135,7 @@ export default function DeletionFeedback({ count, bytesFreed, executionTime, onD
               }}>
                 {count}
               </span>
-              {" "}file{count !== 1 ? 's' : ''} removed
+              {" "}file{count !== 1 ? 's' : ''} whacked
             </span>
             <span style={{ color: "#6B7A8D" }}>•</span>
             <span>
@@ -150,15 +155,77 @@ export default function DeletionFeedback({ count, bytesFreed, executionTime, onD
           </div>
         </div>
 
-        {/* Dismiss hint */}
-        <div style={{
-          fontSize: "10px",
-          color: "#6B7A8D",
-          fontStyle: "italic",
-        }}>
-          click to dismiss
-        </div>
+        {/* Dismiss button */}
+        <button
+          onClick={onDismiss}
+          style={{
+            background: "none",
+            border: "1px solid #C9A84C44",
+            color: "#C9A84C",
+            fontFamily: "var(--font-audiowide)",
+            fontSize: "10px",
+            letterSpacing: "0.08em",
+            padding: "6px 12px",
+            cursor: "pointer",
+            borderRadius: "2px",
+            transition: "all 0.15s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "#C9A84C";
+            e.currentTarget.style.boxShadow = "0 0 8px rgba(201,168,76,0.3)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "#C9A84C44";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+        >
+          ✕
+        </button>
       </div>
+
+      {/* Movie Titles List */}
+      {displayTitles.length > 0 && (
+        <div style={{
+          borderTop: "1px solid #2A4520",
+          paddingTop: "12px",
+          maxHeight: "200px",
+          overflowY: "auto",
+        }}>
+          <div style={{
+            fontFamily: "var(--font-audiowide)",
+            fontSize: "9px",
+            letterSpacing: "0.12em",
+            color: "#6B8B6B",
+            marginBottom: "8px",
+          }}>
+            CASUALTIES:
+          </div>
+          <ul style={{
+            margin: 0,
+            padding: "0 0 0 20px",
+            fontSize: "12px",
+            color: "#9ABF9E",
+            lineHeight: "1.8",
+          }}>
+            {displayTitles.map((title, idx) => (
+              <li key={idx} style={{ marginBottom: "4px" }}>
+                {title}
+              </li>
+            ))}
+          </ul>
+          {remainingCount > 0 && (
+            <div style={{
+              fontSize: "11px",
+              color: "#6B8B6B",
+              fontStyle: "italic",
+              marginTop: "8px",
+              paddingLeft: "20px",
+            }}>
+              ...and {remainingCount} more
+            </div>
+          )}
+        </div>
+      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes trashBounceIn {

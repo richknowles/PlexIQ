@@ -81,6 +81,12 @@ const CSS = `
   .dome-l .dome-inner { animation:spinDomeL 0.55s linear infinite; }
   .dome-r .dome-inner { animation:spinDomeR 0.55s linear infinite; }
 
+  /* ── Body count badge pulse (v5.3.4.1) ── */
+  @keyframes bodyCountPulse {
+    0%, 100% { transform:scale(1); box-shadow:0 0 12px rgba(232,64,64,0.6); }
+    50%      { transform:scale(1.1); box-shadow:0 0 20px rgba(232,64,64,0.9); }
+  }
+
   /* ── Tabs ── */
   .tab-btn {
     font-family:var(--font-audiowide); font-size:11px; letter-spacing:0.12em;
@@ -240,7 +246,8 @@ export default function Dashboard() {
   const [progress,         setProgress]         = useState({ current:0, total:0, stage:"", message:"" });
   const [stats,            setStats]            = useState<LibraryStats | null>(null);
   const [movies,           setMovies]           = useState<PlexMovie[]>([]);
-  const [activeTab,        setActiveTab]        = useState<"analyze"|"saved">("analyze");
+  const [activeTab,        setActiveTab]        = useState<"analyze"|"saved"|"hitlist">("analyze");
+  const [hitList,          setHitList]          = useState<Array<{timestamp: string; titles: string[]; count: number; bytesFreed: number}>>([]);
   const [untouchables,     setUntouchables]     = useState<Set<number>>(new Set());
   const [fadingIds,        setFadingIds]        = useState<Set<number>>(new Set());
   const [selectedIds,      setSelectedIds]      = useState<Set<number>>(new Set());
@@ -263,6 +270,7 @@ export default function Dashboard() {
     count: number;
     bytesFreed: number;
     executionTime: number;
+    titles: string[];
   } | null>(null);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -279,6 +287,7 @@ export default function Dashboard() {
     const savedStars = localStorage.getItem("plexiq_untouchables");
     const savedPageSize = localStorage.getItem("plexiq_pageSize");
     const savedGlobalCutList = localStorage.getItem("plexiq_globalCutList");
+    const savedHitList = localStorage.getItem("plexiq_hitList");
 
     if (savedLibrary) setSelectedSectionId(savedLibrary);
     if (savedThreshold) {
@@ -306,6 +315,14 @@ export default function Dashboard() {
         setGlobalCutList(map);
       } catch (e) {
         console.warn("Could not restore global cut list:", e);
+      }
+    }
+    if (savedHitList) {
+      try {
+        const data = JSON.parse(savedHitList);
+        setHitList(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.warn("Could not restore hit list:", e);
       }
     }
   }, []);
@@ -390,7 +407,12 @@ export default function Dashboard() {
   // Higher threshold = more aggressive = more candidates shown
   const filteredMovies = movies.filter(m => {
     const minScore = 100 - threshold; // Invert: threshold 0 = need score 100, threshold 100 = need score 0
-    return m.score >= minScore && !fadingIds.has(m.id) && !untouchables.has(m.id);
+    // Exclude: fading (starred), untouchables, crumpling/sliding (being deleted)
+    return m.score >= minScore
+      && !fadingIds.has(m.id)
+      && !untouchables.has(m.id)
+      && !crumplingIds.has(m.id)
+      && !slidingIds.has(m.id);
   });
 
   // Sort movies
@@ -572,7 +594,7 @@ export default function Dashboard() {
       }
 
       if (!isDryRun) {
-        // ── Real Plex deletion with animations (v5.3.4) ──
+        // ── Real Plex deletion with animations (v5.3.4.1) ──
         // ONLY delete manually checked items (never auto-delete based on threshold)
         if (selectedIds.size === 0) {
           alert("No items selected for deletion. Please check items you want to delete.");
@@ -583,28 +605,26 @@ export default function Dashboard() {
 
         const toDelete = movies.filter(m => selectedIds.has(m.id));
         const startTime = Date.now();
+        const toDeleteIds = new Set(toDelete.map(m => m.id));
 
         // Capture stats before deletion
         const bytesFreed = toDelete.reduce((sum, m) => sum + m.sizeBytes, 0);
+        const deletedTitles = toDelete.map(m => m.title);
 
-        // Phase 1: Start crumpling animation (400ms)
-        const toDeleteIds = new Set(toDelete.map(m => m.id));
+        // Close modal FIRST so user can see the table animations
+        setConfirmStep(0);
+        setPassword("");
+
+        // Phase 1: Crumple animation (1000ms - made slower to be visible)
         setCrumplingIds(toDeleteIds);
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise(r => setTimeout(r, 1000));
 
-        // Phase 2: Start slide-to-trash animation in staggered batches
+        // Phase 2: Slide-to-trash animation (1200ms - extended for visibility)
         setSlidingIds(toDeleteIds);
-        setCrumplingIds(new Set()); // Clear crumpling state
-
-        // Stagger the slides (100ms per item, max 5 concurrent)
-        const batchSize = 5;
-        const toDeleteArray = Array.from(toDelete);
-        for (let i = 0; i < toDeleteArray.length; i += batchSize) {
-          await new Promise(r => setTimeout(r, 100 * Math.min(batchSize, toDeleteArray.length - i)));
-        }
-
-        // Wait for slide animation to complete (800ms total)
-        await new Promise(r => setTimeout(r, 800));
+        // Keep crumpling class active during slide for smoother transition
+        await new Promise(r => setTimeout(r, 600));
+        setCrumplingIds(new Set()); // Clear halfway through slide
+        await new Promise(r => setTimeout(r, 600));
 
         // Phase 3: Execute actual deletion API call
         const ratingKeys = toDelete.map(m => m.ratingKey);
@@ -621,16 +641,28 @@ export default function Dashboard() {
           setSelectedIds(new Set());
           setSlidingIds(new Set());
 
-          // Phase 4: Show success feedback
+          // Add to hit list (persistent deletion history)
+          const newHitListEntry = {
+            timestamp: new Date().toISOString(),
+            titles: deletedTitles,
+            count: toDelete.length,
+            bytesFreed,
+          };
+
+          // Store in localStorage and update state
+          const existingHitList = JSON.parse(localStorage.getItem("plexiq_hitList") || "[]");
+          existingHitList.push(newHitListEntry);
+          localStorage.setItem("plexiq_hitList", JSON.stringify(existingHitList));
+          setHitList(existingHitList);
+
+          // Phase 4: Show success feedback (persistent - no auto-dismiss)
           const executionTime = (Date.now() - startTime) / 1000;
           setDeletionStats({
             count: toDelete.length,
             bytesFreed,
             executionTime,
+            titles: deletedTitles,
           });
-
-          // Auto-dismiss after 5 seconds
-          setTimeout(() => setDeletionStats(null), 5000);
 
         } catch (err) {
           console.error("Delete API failed:", err);
@@ -641,10 +673,13 @@ export default function Dashboard() {
         }
       }
 
-      setConfirmStep(0);
-      setPassword("");
-      setDeleteSuccess(true);
-      setTimeout(() => setDeleteSuccess(false), 4000);
+      // For dry run, just close modal
+      if (isDryRun) {
+        setConfirmStep(0);
+        setPassword("");
+        setDeleteSuccess(true);
+        setTimeout(() => setDeleteSuccess(false), 4000);
+      }
       return;
     }
     setConfirmStep(prev => (prev + 1) as 0|1|2|3);
@@ -656,6 +691,14 @@ export default function Dashboard() {
   const cutListCount   = selectedIds.size; // Only checked items get deleted
   const deleteTargets  = selectedIds.size; // Same - only checked items
   const showPoliceLights = !isDryRun && confirmStep > 0;
+
+  // Wastebasket visual states (v5.3.4.1)
+  const getWastebasketIcon = () => {
+    const count = selectedIds.size;
+    if (count === 0) return "🗑️";
+    if (count >= 10) return "🗑️💥"; // Full/overflowing
+    return "🗑️📄"; // Filling
+  };
 
   const ScoreCell = ({ score }: { score: number }) => {
     const color = score >= 85 ? "#E84040" : score >= 65 ? "#C9A84C" : "#8B7355";
@@ -792,15 +835,42 @@ export default function Dashboard() {
                 style={{ borderColor:untouchables.size > 0 ? "#C9A84C88" : undefined, color:untouchables.size > 0 ? "#FFE066" : undefined }}>
                 ★ THE UNTOUCHABLES ({untouchables.size})
               </button>
+              <button className="u-btn" onClick={() => setActiveTab("hitlist")}
+                style={{ borderColor:hitList.length > 0 ? "#E8404088" : undefined, color:hitList.length > 0 ? "#E87070" : undefined }}>
+                💀 THE HIT LIST ({hitList.length})
+              </button>
               <button
                 className={"u-btn danger" + (!isDryRun ? " live" : "")}
                 disabled={!stats || isAnalyzing || selectedIds.size === 0}
                 onClick={handleDeleteClick}
                 title={selectedIds.size === 0 ? "Check items to delete first" : undefined}
+                style={{
+                  position: "relative",
+                }}
               >
                 {isDryRun
                   ? `🌭 CUT LIST${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""} (DRY RUN)`
-                  : `🗑️ DELETE ${selectedIds.size > 0 ? selectedIds.size : filteredMovies.length} FILES — LIVE`}
+                  : `${getWastebasketIcon()} DELETE ${selectedIds.size > 0 ? selectedIds.size : filteredMovies.length} FILES — LIVE`}
+                {/* Body count badge when items selected */}
+                {!isDryRun && selectedIds.size > 0 && (
+                  <span style={{
+                    position: "absolute",
+                    top: "-8px",
+                    right: "-8px",
+                    background: selectedIds.size >= 10 ? "#E84040" : "#C9A84C",
+                    color: "#0D0A04",
+                    fontFamily: "var(--font-audiowide)",
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                    padding: "4px 8px",
+                    borderRadius: "12px",
+                    border: "2px solid #0D0A04",
+                    boxShadow: "0 0 12px rgba(201,168,76,0.6)",
+                    animation: selectedIds.size >= 10 ? "bodyCountPulse 1s ease-in-out infinite" : "none",
+                  }}>
+                    {selectedIds.size}
+                  </span>
+                )}
               </button>
             </div>
 
@@ -864,6 +934,84 @@ export default function Dashboard() {
                       <button className="rm-btn" onClick={() => removeUntouchable(m.id)}>RELEASE</button>
                     </div>
                   ))
+                )}
+              </div>
+            )}
+
+            {/* ── THE HIT LIST PANEL ── */}
+            {activeTab === "hitlist" && (
+              <div className="deco-card" style={{ padding:"24px", background:"linear-gradient(160deg,#1A0808 0%,#0D0404 100%)" }}>
+                <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"16px", letterSpacing:"0.12em", color:"#E84040", marginBottom:"20px", textAlign:"center", textShadow:"0 0 16px rgba(232,64,64,0.4)" }}>
+                  💀 THE HIT LIST 💀
+                </div>
+                {hitList.length === 0 ? (
+                  <div style={{ textAlign:"center", padding:"40px 20px", color:"#6B4040", fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.12em" }}>
+                    NO HITS RECORDED YET — DELETE SOME MOVIES IN LIVE MODE
+                  </div>
+                ) : (
+                  <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
+                    {[...hitList].reverse().map((hit, idx) => {
+                      const date = new Date(hit.timestamp);
+                      const formatSize = (bytes: number): string => {
+                        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                        let size = bytes;
+                        let unitIndex = 0;
+                        while (size >= 1024 && unitIndex < units.length - 1) {
+                          size /= 1024;
+                          unitIndex++;
+                        }
+                        return `${size.toFixed(2)} ${units[unitIndex]}`;
+                      };
+
+                      return (
+                        <div key={idx} style={{
+                          background:"linear-gradient(135deg, #2A0808 0%, #1A0404 100%)",
+                          border:"1px solid #4A1818",
+                          borderRadius:"4px",
+                          padding:"16px",
+                        }}>
+                          {/* Header Row */}
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px" }}>
+                            <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.1em", color:"#C05050" }}>
+                              HIT #{hitList.length - idx}
+                            </div>
+                            <div style={{ fontSize:"11px", color:"#6B4040" }}>
+                              {date.toLocaleDateString()} {date.toLocaleTimeString()}
+                            </div>
+                          </div>
+
+                          {/* Stats Row */}
+                          <div style={{ display:"flex", gap:"20px", marginBottom:"12px", fontSize:"12px", color:"#9A7070" }}>
+                            <span>
+                              <span style={{ fontFamily:"var(--font-audiowide)", color:"#E87070", fontSize:"14px" }}>
+                                {hit.count}
+                              </span>
+                              {" "}file{hit.count !== 1 ? 's' : ''}
+                            </span>
+                            <span style={{ color:"#4A1818" }}>•</span>
+                            <span>
+                              <span style={{ fontFamily:"var(--font-audiowide)", color:"#E87070", fontSize:"14px" }}>
+                                {formatSize(hit.bytesFreed)}
+                              </span>
+                              {" "}freed
+                            </span>
+                          </div>
+
+                          {/* Casualties List */}
+                          <div style={{ borderTop:"1px solid #4A1818", paddingTop:"12px" }}>
+                            <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"8px", letterSpacing:"0.15em", color:"#6B4040", marginBottom:"8px" }}>
+                              CASUALTIES:
+                            </div>
+                            <ul style={{ margin:0, padding:"0 0 0 20px", fontSize:"11px", color:"#9A7070", lineHeight:"1.7", maxHeight:"150px", overflowY:"auto" }}>
+                              {hit.titles.map((title, tidx) => (
+                                <li key={tidx}>{title}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
@@ -1176,6 +1324,7 @@ export default function Dashboard() {
           count={deletionStats.count}
           bytesFreed={deletionStats.bytesFreed}
           executionTime={deletionStats.executionTime}
+          titles={deletionStats.titles}
           onDismiss={() => setDeletionStats(null)}
         />
       )}
