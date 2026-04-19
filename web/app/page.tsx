@@ -113,33 +113,50 @@ const CSS = `
   }
   .fading-out td { animation:fadeRowOut 0.38s ease-in forwards; overflow:hidden; }
 
-  /* ── Shooting Range Deletion Animation (v5.3.4.3 - DEBUG VERSION) ──
-     USING BRIGHT NEON COLORS TO DEBUG VISIBILITY */
+  /* ── Chicago Style 3-Shot Execution Animation (v5.3.4.4) ── */
 
-  @keyframes targetLock {
-    0%   { background:#00FF00; transform:scale(1.2); }
-    50%  { background:#FFFF00; transform:scale(1.1); }
-    100% { background:#00FF00; transform:scale(1.2); }
+  @keyframes chicagoExecution {
+    /* Target acquired - pulsing dark red crosshair */
+    0%   { background:transparent; box-shadow:none; }
+    7%   { background:rgba(139,28,28,0.25); box-shadow:inset 0 0 0 1px #8B1C1C88; }
+    12%  { background:transparent; box-shadow:none; }
+    16%  { background:rgba(139,28,28,0.25); box-shadow:inset 0 0 0 2px #CC000088; }
+
+    /* BOOM 1 — muzzle flash (510ms) */
+    16.9%  { background:rgba(60,10,10,0.2); box-shadow:none; }
+    17%    { background:rgba(255,80,20,0.9); box-shadow:inset 0 0 40px rgba(255,180,60,1); color:#fff; }
+    20%    { background:rgba(139,28,28,0.35); box-shadow:inset 0 0 8px rgba(200,40,20,0.4); }
+
+    /* BOOM 2 — second shot (810ms) */
+    26.9%  { background:rgba(139,28,28,0.3); }
+    27%    { background:rgba(255,70,15,0.85); box-shadow:inset 0 0 36px rgba(255,160,50,0.9); }
+    30%    { background:rgba(139,28,28,0.35); box-shadow:inset 0 0 6px rgba(200,40,20,0.3); }
+
+    /* BOOM 3 — kill shot (1110ms) */
+    36.9%  { background:rgba(139,28,28,0.3); }
+    37%    { background:rgba(255,60,10,0.8); box-shadow:inset 0 0 32px rgba(255,140,40,0.85); }
+    41%    { background:rgba(180,30,30,0.5); box-shadow:none; }
+
+    /* Collapse and fade — slow dramatic exit */
+    55%    { background:rgba(80,10,10,0.4); opacity:1; max-height:60px; padding-top:10px; padding-bottom:10px; }
+    85%    { background:rgba(30,5,5,0.2); opacity:0.3; max-height:30px; padding-top:4px; padding-bottom:4px; }
+    100%   { background:transparent; opacity:0; max-height:0; padding-top:0; padding-bottom:0; overflow:hidden; }
   }
 
-  @keyframes shotImpact {
-    0%   { background:#00FF00; }
-    25%  { background:#FF00FF; transform:scale(1.3); box-shadow:0 0 40px #FF00FF; }
-    50%  { background:#00FFFF; transform:scale(1.2); box-shadow:0 0 40px #00FFFF; }
-    75%  { background:#FFFF00; transform:scale(1.1); box-shadow:0 0 40px #FFFF00; }
-    100% { background:#FF0000; transform:scale(0.8); opacity:0; max-height:0; padding:0; }
-  }
-
-  /* Phase 1: Target lock - BRIGHT GREEN */
   .hit-target td {
-    animation:targetLock 1.0s ease-in-out infinite !important;
-    background:#00FF00 !important;
+    animation:chicagoExecution 3.2s ease-out forwards;
+    overflow:hidden;
   }
 
-  /* Phase 2+3: Shot impacts - NEON RAINBOW then collapse */
-  .hit-row td {
-    animation:shotImpact 3.0s ease-out forwards !important;
+  /* Kill shot lands slightly later on the title column for stagger feel */
+  .hit-target td:nth-child(3) {
+    animation:chicagoExecution 3.2s ease-out 0.06s forwards;
     overflow:hidden;
+  }
+
+  /* Respect prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    .hit-target td { animation:fadeRowOut 0.25s ease-in forwards !important; }
   }
 
   /* Respect prefers-reduced-motion */
@@ -611,26 +628,16 @@ export default function Dashboard() {
         setConfirmStep(0);
         setPassword("");
 
-        // SHOOTING RANGE ANIMATION
-        // Phase 1: Target appears on each row (300ms)
-        console.log("🎯 Phase 1: Showing targets on", toDeleteIds.size, "rows");
-        setCrumplingIds(toDeleteIds); // Reuse for target state
-        await new Promise(r => setTimeout(r, 500));
+        // CHICAGO 3-SHOT EXECUTION ANIMATION (v5.3.4.4)
+        // Single class does target lock + 3 muzzle flashes + dramatic collapse (3.2s total)
+        console.log("🎯 Chicago Style: Executing", toDeleteIds.size, "titles");
+        setCrumplingIds(toDeleteIds);
 
-        // Phase 2: BOOM BOOM BOOM - bullet holes (simulate with visual feedback)
-        console.log("💥 Phase 2: BOOM BOOM BOOM");
-        // We'll show this via CSS animation on the rows
-        setSlidingIds(toDeleteIds); // Reuse for hit state
+        // Wait for full animation to complete before removing from DOM
+        // 3.2s animation + small buffer
+        await new Promise(r => setTimeout(r, 3400));
 
-        // Wait for 3 shots to land (0.4s each = 1.2s total)
-        await new Promise(r => setTimeout(r, 1200));
-
-        // Phase 3: Rows fade out after being hit (1.5s)
-        console.log("👻 Phase 3: Rows fading out");
-        setCrumplingIds(new Set()); // Clear target state
-        await new Promise(r => setTimeout(r, 1500));
-
-        // Phase 3: Execute actual deletion API call
+        // Execute actual deletion API call
         const ratingKeys = toDelete.map(m => m.ratingKey);
         try {
           await fetch("/api/delete", {
@@ -643,6 +650,7 @@ export default function Dashboard() {
           const deletedIds = new Set(toDelete.map(m => m.id));
           setMovies(prev => prev.filter(m => !deletedIds.has(m.id)));
           setSelectedIds(new Set());
+          setCrumplingIds(new Set());
           setSlidingIds(new Set());
 
           // Add to hit list (persistent deletion history)
