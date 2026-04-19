@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import ThresholdSlider from "@/components/threshold-slider";
 import LibraryStatsDisplay from "@/components/library-stats";
 import MustardProgress from "@/components/mustard-progress";
+import DeletionFeedback from "@/components/deletion-feedback";
 import { LibraryStats } from "@/types/plexiq";
 
 interface PlexMovie {
@@ -105,6 +106,43 @@ const CSS = `
     to   { opacity:0; max-height:0;   padding-top:0;    padding-bottom:0; }
   }
   .fading-out td { animation:fadeRowOut 0.38s ease-in forwards; overflow:hidden; }
+
+  /* ── Deletion animations (v5.3.4) ── */
+  @keyframes crumplePaper {
+    0%   { transform:scale(1) rotateX(0) skewX(0); background:transparent; }
+    50%  { transform:scale(0.95) rotateX(5deg) skewX(-2deg); background:#1A1408; }
+    100% { transform:scale(0.92) rotateX(8deg) skewX(-3deg); background:#1C1204; }
+  }
+  @keyframes slideToTrash {
+    0%   { transform:translateX(0) rotateZ(0deg); opacity:1; }
+    70%  { opacity:0.4; }
+    100% { transform:translateX(120%) rotateZ(-12deg); opacity:0; }
+  }
+  @keyframes dustPuff {
+    0%   { opacity:0; transform:scale(0.5) translateY(0); }
+    30%  { opacity:0.6; transform:scale(1.2) translateY(-8px); }
+    100% { opacity:0; transform:scale(2) translateY(-16px); }
+  }
+  @keyframes goldParticle {
+    0%   { transform:translateY(0) scale(1); opacity:1; }
+    100% { transform:translateY(-80px) translateX(var(--drift)) scale(0.3); opacity:0; }
+  }
+
+  .crumpling td {
+    animation:crumplePaper 0.4s ease-out forwards;
+    will-change:transform;
+  }
+  .sliding-to-trash td {
+    animation:slideToTrash 0.8s ease-out forwards;
+    will-change:transform, opacity;
+  }
+
+  /* Respect prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    .crumpling td, .sliding-to-trash td {
+      animation:fadeRowOut 0.25s ease-in forwards !important;
+    }
+  }
 
   /* ── Confirmation modal ── */
   .modal-overlay {
@@ -216,6 +254,16 @@ export default function Dashboard() {
   const [globalCutList,    setGlobalCutList]    = useState<Map<string, Set<number>>>(new Map()); // libraryKey -> Set of movie IDs
   const [sortBy,           setSortBy]           = useState<"title"|"score"|"size"|"rating"|"plays">("score");
   const [sortDir,          setSortDir]          = useState<"asc"|"desc">("desc");
+
+  // Deletion animation state (v5.3.4)
+  const [deletingIds,      setDeletingIds]      = useState<Set<number>>(new Set());
+  const [crumplingIds,     setCrumplingIds]     = useState<Set<number>>(new Set());
+  const [slidingIds,       setSlidingIds]       = useState<Set<number>>(new Set());
+  const [deletionStats,    setDeletionStats]    = useState<{
+    count: number;
+    bytesFreed: number;
+    executionTime: number;
+  } | null>(null);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SESSION PERSISTENCE v5.3.2 - Survives refresh, disconnect, accidental pulls
@@ -524,7 +572,7 @@ export default function Dashboard() {
       }
 
       if (!isDryRun) {
-        // ── Real Plex deletion ──
+        // ── Real Plex deletion with animations (v5.3.4) ──
         // ONLY delete manually checked items (never auto-delete based on threshold)
         if (selectedIds.size === 0) {
           alert("No items selected for deletion. Please check items you want to delete.");
@@ -534,6 +582,31 @@ export default function Dashboard() {
         }
 
         const toDelete = movies.filter(m => selectedIds.has(m.id));
+        const startTime = Date.now();
+
+        // Capture stats before deletion
+        const bytesFreed = toDelete.reduce((sum, m) => sum + m.sizeBytes, 0);
+
+        // Phase 1: Start crumpling animation (400ms)
+        const toDeleteIds = new Set(toDelete.map(m => m.id));
+        setCrumplingIds(toDeleteIds);
+        await new Promise(r => setTimeout(r, 400));
+
+        // Phase 2: Start slide-to-trash animation in staggered batches
+        setSlidingIds(toDeleteIds);
+        setCrumplingIds(new Set()); // Clear crumpling state
+
+        // Stagger the slides (100ms per item, max 5 concurrent)
+        const batchSize = 5;
+        const toDeleteArray = Array.from(toDelete);
+        for (let i = 0; i < toDeleteArray.length; i += batchSize) {
+          await new Promise(r => setTimeout(r, 100 * Math.min(batchSize, toDeleteArray.length - i)));
+        }
+
+        // Wait for slide animation to complete (800ms total)
+        await new Promise(r => setTimeout(r, 800));
+
+        // Phase 3: Execute actual deletion API call
         const ratingKeys = toDelete.map(m => m.ratingKey);
         try {
           await fetch("/api/delete", {
@@ -541,11 +614,30 @@ export default function Dashboard() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ratingKeys }),
           });
+
+          // Update state - remove deleted movies
           const deletedIds = new Set(toDelete.map(m => m.id));
           setMovies(prev => prev.filter(m => !deletedIds.has(m.id)));
           setSelectedIds(new Set());
-        } catch {
-          console.error("Delete API failed");
+          setSlidingIds(new Set());
+
+          // Phase 4: Show success feedback
+          const executionTime = (Date.now() - startTime) / 1000;
+          setDeletionStats({
+            count: toDelete.length,
+            bytesFreed,
+            executionTime,
+          });
+
+          // Auto-dismiss after 5 seconds
+          setTimeout(() => setDeletionStats(null), 5000);
+
+        } catch (err) {
+          console.error("Delete API failed:", err);
+          alert("Deletion failed. Check server connection.");
+          // Reset animation states on error
+          setCrumplingIds(new Set());
+          setSlidingIds(new Set());
         }
       }
 
@@ -824,8 +916,16 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {visibleFiltered.map(m => (
-                        <tr key={m.id} className={"result-row" + (fadingIds.has(m.id) ? " fading-out" : "")}
+                      {visibleFiltered.map(m => {
+                        const rowClasses = [
+                          "result-row",
+                          fadingIds.has(m.id) && "fading-out",
+                          crumplingIds.has(m.id) && "crumpling",
+                          slidingIds.has(m.id) && "sliding-to-trash",
+                        ].filter(Boolean).join(" ");
+
+                        return (
+                        <tr key={m.id} className={rowClasses} data-movie-id={m.id}
                           style={{ opacity: selectedIds.has(m.id) ? 1 : undefined, background: selectedIds.has(m.id) ? "#1C1608" : undefined }}>
                           <td style={{ padding:"10px 8px" }}>
                             <input type="checkbox" className="check-box" checked={selectedIds.has(m.id)} onChange={() => toggleSelect(m.id)} />
@@ -842,38 +942,146 @@ export default function Dashboard() {
                           <td style={{ padding:"10px 8px", color:"#6B5E3C", fontSize:"12px" }}>{m.rating || "—"}</td>
                           <td style={{ padding:"10px 8px", color:"#4A3F28", fontSize:"12px" }}>{m.plays}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-                {/* Pagination Controls v5.3.3 */}
-                <div style={{ borderTop:"1px solid #1A1408", padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
-                    <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.1em", color:"#4A3F28" }}>
-                      SHOW:
-                    </span>
-                    <select
-                      value={pageSize}
-                      onChange={(e) => setPageSize(parseInt(e.target.value))}
-                      style={{ background:"#0D0A04", border:"1px solid #2A2318", color:"#C8B99A", padding:"6px 10px", fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.08em", cursor:"pointer", outline:"none" }}
-                    >
-                      {PAGE_SIZE_OPTIONS.map(size => (
-                        <option key={size} value={size}>{size} items</option>
-                      ))}
-                    </select>
-                    <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.08em", color:"#6B5E3C" }}>
-                      Showing {Math.min(visibleCount, filteredMovies.length)} of {filteredMovies.length}
-                    </span>
+                {/* Pagination Controls v5.3.4 - Enhanced with page numbers */}
+                <div style={{ borderTop:"1px solid #1A1408", padding:"20px 24px" }}>
+                  {/* Top row: page size selector and info */}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+                      <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.1em", color:"#4A3F28" }}>
+                        SHOW:
+                      </span>
+                      <select
+                        value={pageSize}
+                        onChange={(e) => setPageSize(parseInt(e.target.value))}
+                        style={{ background:"#0D0A04", border:"1px solid #2A2318", color:"#C8B99A", padding:"6px 10px", fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.08em", cursor:"pointer", outline:"none" }}
+                      >
+                        {PAGE_SIZE_OPTIONS.map(size => (
+                          <option key={size} value={size}>{size} items</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:"16px" }}>
+                      <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"11px", letterSpacing:"0.08em", color:"#C9A84C" }}>
+                        Page {Math.ceil(visibleCount / pageSize)} of {Math.ceil(filteredMovies.length / pageSize)}
+                      </span>
+                      <div style={{ width:"1px", height:"12px", background:"#2A2318" }} />
+                      <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.08em", color:"#6B5E3C" }}>
+                        Showing {Math.min(visibleCount, filteredMovies.length)} of {filteredMovies.length}
+                      </span>
+                    </div>
                   </div>
-                  {hasMore && (
-                    <button
-                      onClick={() => setVisibleCount(v => v + pageSize)}
-                      style={{ background:"none", border:"1px solid #2A2318", color:"#C9A84C", fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.12em", padding:"8px 16px", cursor:"pointer", borderRadius:"2px", transition:"all 0.15s" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.boxShadow = "0 0 10px #C9A84C22"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A2318"; e.currentTarget.style.boxShadow = "none"; }}
-                    >
-                      LOAD MORE ↓ ({filteredMovies.length - visibleCount} remaining)
-                    </button>
+
+                  {/* Bottom row: page number controls */}
+                  {filteredMovies.length > pageSize && (
+                    <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"6px" }}>
+                      {/* Previous button */}
+                      <button
+                        onClick={() => setVisibleCount(v => Math.max(pageSize, v - pageSize))}
+                        disabled={visibleCount <= pageSize}
+                        style={{
+                          background:"none",
+                          border:"1px solid #2A2318",
+                          color:visibleCount <= pageSize ? "#2A2318" : "#C9A84C",
+                          fontFamily:"var(--font-audiowide)",
+                          fontSize:"9px",
+                          letterSpacing:"0.08em",
+                          padding:"6px 12px",
+                          cursor:visibleCount <= pageSize ? "not-allowed" : "pointer",
+                          borderRadius:"2px",
+                          transition:"all 0.15s",
+                          opacity:visibleCount <= pageSize ? 0.3 : 1,
+                        }}
+                        onMouseEnter={(e) => { if (visibleCount > pageSize) { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.boxShadow = "0 0 8px #C9A84C22"; }}}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A2318"; e.currentTarget.style.boxShadow = "none"; }}
+                      >
+                        ◄ PREV
+                      </button>
+
+                      {/* Page numbers - show first 2, current, last 2 with ellipsis */}
+                      {(() => {
+                        const currentPage = Math.ceil(visibleCount / pageSize);
+                        const totalPages = Math.ceil(filteredMovies.length / pageSize);
+                        const pageButtons = [];
+
+                        const addPageButton = (pageNum: number) => {
+                          const isActive = pageNum === currentPage;
+                          pageButtons.push(
+                            <button
+                              key={pageNum}
+                              onClick={() => setVisibleCount(pageNum * pageSize)}
+                              style={{
+                                background:isActive ? "#C9A84C22" : "none",
+                                border:`1px solid ${isActive ? "#C9A84C" : "#2A2318"}`,
+                                color:isActive ? "#C9A84C" : "#6B5E3C",
+                                fontFamily:"var(--font-audiowide)",
+                                fontSize:"11px",
+                                padding:"6px 10px",
+                                cursor:"pointer",
+                                borderRadius:"2px",
+                                minWidth:"32px",
+                                transition:"all 0.15s",
+                                boxShadow:isActive ? "0 0 12px #C9A84C22" : "none",
+                              }}
+                              onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.color = "#C9A84C"; }}}
+                              onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.borderColor = "#2A2318"; e.currentTarget.style.color = "#6B5E3C"; }}}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        };
+
+                        if (totalPages <= 7) {
+                          for (let i = 1; i <= totalPages; i++) addPageButton(i);
+                        } else {
+                          // Always show first page
+                          addPageButton(1);
+                          if (currentPage > 3) {
+                            pageButtons.push(<span key="ellipsis1" style={{ color:"#4A3F28", fontSize:"12px", padding:"0 4px" }}>...</span>);
+                          }
+                          // Show pages around current
+                          const start = Math.max(2, currentPage - 1);
+                          const end = Math.min(totalPages - 1, currentPage + 1);
+                          for (let i = start; i <= end; i++) {
+                            if (i > 1 && i < totalPages) addPageButton(i);
+                          }
+                          if (currentPage < totalPages - 2) {
+                            pageButtons.push(<span key="ellipsis2" style={{ color:"#4A3F28", fontSize:"12px", padding:"0 4px" }}>...</span>);
+                          }
+                          // Always show last page
+                          if (totalPages > 1) addPageButton(totalPages);
+                        }
+
+                        return pageButtons;
+                      })()}
+
+                      {/* Next button */}
+                      <button
+                        onClick={() => setVisibleCount(v => Math.min(filteredMovies.length, v + pageSize))}
+                        disabled={visibleCount >= filteredMovies.length}
+                        style={{
+                          background:"none",
+                          border:"1px solid #2A2318",
+                          color:visibleCount >= filteredMovies.length ? "#2A2318" : "#C9A84C",
+                          fontFamily:"var(--font-audiowide)",
+                          fontSize:"9px",
+                          letterSpacing:"0.08em",
+                          padding:"6px 12px",
+                          cursor:visibleCount >= filteredMovies.length ? "not-allowed" : "pointer",
+                          borderRadius:"2px",
+                          transition:"all 0.15s",
+                          opacity:visibleCount >= filteredMovies.length ? 0.3 : 1,
+                        }}
+                        onMouseEnter={(e) => { if (visibleCount < filteredMovies.length) { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.boxShadow = "0 0 8px #C9A84C22"; }}}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A2318"; e.currentTarget.style.boxShadow = "none"; }}
+                      >
+                        NEXT ►
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -960,6 +1168,16 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Deletion Success Feedback Banner (v5.3.4) */}
+      {deletionStats && (
+        <DeletionFeedback
+          count={deletionStats.count}
+          bytesFreed={deletionStats.bytesFreed}
+          executionTime={deletionStats.executionTime}
+          onDismiss={() => setDeletionStats(null)}
+        />
       )}
     </div>
   );
