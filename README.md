@@ -1,7 +1,7 @@
-# PlexIQ v5.3.2 — The Chicago Edition 🌭
+# PlexIQ v5.3.3 — The Chicago Edition 🌭
 
 <p align="center">
-  <img src="plexiq-demo.gif" alt="PlexIQ v5.3.2 demo" width="900" />
+  <img src="plexiq-demo.gif" alt="PlexIQ v5.3.3 demo" width="900" />
 </p>
 
 ---
@@ -22,9 +22,16 @@ PlexIQ analyzes your Plex library using multi-factor scoring (play count, rating
 
 ---
 
-## ✨ What's New in v5.3.2
+## ✨ What's New in v5.3.3
 
-### Chicago Edition Features
+### UX Polish & Refinements
+
+- **🎯 Perfected Hotdog Slider** - Grab handle now perfectly centered on track using flexbox (finally!)
+- **🎨 Color Palette Documentation** - Complete hex code reference in COLOR_PALETTE.md
+- **📊 Live Deletion Count** - Deletion candidates number updates in real-time as you move the slider
+- **🏷️ Consistent Version Tags** - All UI elements and browser tab now show v5.3.3
+
+### v5.3.2 - Chicago Edition Features
 
 - **🔌 Auto-Reconnect** - Automatic Plex connection management with manual retry
 - **💾 Session Persistence** - Your selections survive page refresh, disconnects, and accidental navigation
