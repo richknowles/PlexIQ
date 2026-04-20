@@ -10,9 +10,10 @@ import { LibraryStats } from '@/types/plexiq';
 interface LibraryStatsProps {
   stats: LibraryStats | null;
   loading?: boolean;
+  selectedCount?: number;
 }
 
-export default function LibraryStatsDisplay({ stats, loading = false }: LibraryStatsProps) {
+export default function LibraryStatsDisplay({ stats, loading = false, selectedCount = 0 }: LibraryStatsProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-pulse">
@@ -85,6 +86,12 @@ export default function LibraryStatsDisplay({ stats, loading = false }: LibraryS
                 {formatSize(stats.potentialSpaceSaved)}
               </span>
             </div>
+            {/* Selection Counter - v5.3.4 final */}
+            {selectedCount > 0 && (
+              <div className="text-sm text-amber-400 font-semibold mt-2">
+                💣 {selectedCount}/{stats.deletionCandidates} Targets Selected
+              </div>
+            )}
           </div>
           <div className="text-5xl">🎯</div>
         </div>
@@ -93,7 +100,7 @@ export default function LibraryStatsDisplay({ stats, loading = false }: LibraryS
           <div className="mt-4 pt-4 border-t border-amber-700/30">
             <div className="text-xs text-gray-400">
               <span className="text-amber-400 font-semibold">{stats.deletionCandidates}</span> targets
-              acquired. Select items to build your bomb.
+              acquired. {selectedCount > 0 ? `Building bomb with ${selectedCount} target${selectedCount !== 1 ? 's' : ''}.` : 'Select items to build your bomb.'}
             </div>
           </div>
         )}

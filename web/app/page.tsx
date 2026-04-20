@@ -1145,7 +1145,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            <LibraryStatsDisplay stats={stats} loading={isAnalyzing} />
+            <LibraryStatsDisplay stats={stats} loading={isAnalyzing} selectedCount={selectedIds.size} />
 
             {!stats && !isAnalyzing && (
               <div className="deco-card" style={{ padding:"64px 40px", textAlign:"center" }}>
