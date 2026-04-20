@@ -113,57 +113,91 @@ const CSS = `
   }
   .fading-out td { animation:fadeRowOut 0.38s ease-in forwards; overflow:hidden; }
 
-  /* ── Chicago Style 3-Shot Execution Animation (v5.3.4.5) ── */
-  /* Slowed to 5s with smoke effects - Chicago mob hits take their time */
+  /* ── Chicago Style 3-Shot Execution Animation (v5.3.4.6) ── */
+  /* 8 seconds, heavy smoke, neon muzzle flashes - maximum drama */
 
   @keyframes chicagoExecution {
     /* Target acquired - pulsing dark red crosshair */
     0%    { background:transparent; box-shadow:none; }
-    4.5%  { background:rgba(139,28,28,0.25); box-shadow:inset 0 0 0 1px #8B1C1C88; }
-    7.7%  { background:transparent; box-shadow:none; }
-    10.2% { background:rgba(139,28,28,0.25); box-shadow:inset 0 0 0 2px #CC000088; }
+    3%    { background:rgba(139,28,28,0.3); box-shadow:inset 0 0 0 2px #8B1C1C88; }
+    5%    { background:transparent; box-shadow:none; }
+    7%    { background:rgba(139,28,28,0.35); box-shadow:inset 0 0 0 3px #CC000088; }
+    9%    { background:rgba(139,28,28,0.2); box-shadow:inset 0 0 0 1px #FF000066; }
 
-    /* BOOM 1 — muzzle flash */
-    10.8% { background:rgba(60,10,10,0.2); box-shadow:none; }
-    10.9% { background:rgba(255,80,20,0.9); box-shadow:inset 0 0 40px rgba(255,180,60,1); color:#fff; }
-    12.8% { background:rgba(139,28,28,0.35); box-shadow:inset 0 0 8px rgba(200,40,20,0.4); }
+    /* BOOM 1 — NEON muzzle flash */
+    11%   { background:rgba(60,10,10,0.25); box-shadow:none; }
+    11.5% { background:rgba(255,100,30,1) !important; box-shadow:inset 0 0 60px rgba(255,220,80,1), 0 0 40px rgba(255,160,40,0.8) !important; color:#fff !important; }
+    13%   { background:rgba(200,50,20,0.5); box-shadow:inset 0 0 20px rgba(255,100,30,0.6), 0 0 15px rgba(255,80,20,0.4); }
+    15%   { background:rgba(139,28,28,0.35); box-shadow:inset 0 0 8px rgba(200,40,20,0.3); }
 
-    /* BOOM 2 — second shot */
-    17.2% { background:rgba(139,28,28,0.3); }
-    17.3% { background:rgba(255,70,15,0.85); box-shadow:inset 0 0 36px rgba(255,160,50,0.9); }
-    19.2% { background:rgba(139,28,28,0.35); box-shadow:inset 0 0 6px rgba(200,40,20,0.3); }
+    /* BOOM 2 — NEON second shot */
+    20%   { background:rgba(139,28,28,0.3); }
+    20.5% { background:rgba(255,90,25,0.95) !important; box-shadow:inset 0 0 55px rgba(255,200,70,0.95), 0 0 35px rgba(255,140,30,0.75) !important; color:#fff !important; }
+    22%   { background:rgba(190,45,18,0.5); box-shadow:inset 0 0 18px rgba(255,90,25,0.5), 0 0 12px rgba(255,70,15,0.35); }
+    24%   { background:rgba(139,28,28,0.3); box-shadow:inset 0 0 6px rgba(200,40,20,0.25); }
 
-    /* BOOM 3 — kill shot */
-    23.6% { background:rgba(139,28,28,0.3); }
-    23.7% { background:rgba(255,60,10,0.8); box-shadow:inset 0 0 32px rgba(255,140,40,0.85); }
-    26.2% { background:rgba(180,30,30,0.5); box-shadow:none; }
+    /* BOOM 3 — NEON kill shot (brightest) */
+    28%   { background:rgba(139,28,28,0.35); }
+    28.5% { background:rgba(255,80,20,1) !important; box-shadow:inset 0 0 70px rgba(255,240,100,1), 0 0 50px rgba(255,120,20,0.9) !important; color:#fff !important; }
+    30%   { background:rgba(180,40,15,0.6); box-shadow:inset 0 0 25px rgba(255,80,20,0.7), 0 0 18px rgba(255,60,10,0.4); }
+    32%   { background:rgba(139,28,28,0.4); box-shadow:inset 0 0 10px rgba(180,30,15,0.3); }
 
-    /* Collapse and fade — slow dramatic exit with smoke */
-    35.2% { background:rgba(80,10,10,0.4); opacity:1; max-height:60px; padding-top:10px; padding-bottom:10px; }
-    54.4% { background:rgba(30,5,5,0.2); opacity:0.3; max-height:30px; padding-top:4px; padding-bottom:4px; }
+    /* Heavy smoke phase - slow collapse */
+    40%   { background:rgba(100,15,10,0.5); opacity:1; max-height:60px; padding-top:10px; padding-bottom:10px; }
+    55%   { background:rgba(60,10,8,0.35); opacity:0.85; max-height:50px; padding-top:8px; padding-bottom:8px; }
+    70%   { background:rgba(30,5,5,0.2); opacity:0.5; max-height:35px; padding-top:5px; padding-bottom:5px; }
+    85%   { background:rgba(15,3,3,0.1); opacity:0.2; max-height:20px; padding-top:2px; padding-bottom:2px; }
     100%  { background:transparent; opacity:0; max-height:0; padding-top:0; padding-bottom:0; overflow:hidden; }
   }
 
-  /* Smoke wisps that rise from edges during execution */
-  @keyframes smokeRise {
-    0%   { opacity:0; transform:translateY(0) scale(0.3) rotate(0deg); filter:blur(0px); }
-    20%  { opacity:0.6; transform:translateY(-15px) scale(0.8) rotate(15deg); filter:blur(3px); }
-    50%  { opacity:0.4; transform:translateY(-40px) scale(1.2) rotate(-25deg); filter:blur(6px); }
-    100% { opacity:0; transform:translateY(-70px) scale(1.5) rotate(40deg); filter:blur(10px); }
+  /* Heavy smoke wisps - multiple variations for density */
+  @keyframes smokeLeft1 {
+    0%   { opacity:0; transform:translateX(0) translateY(0) scale(0.4); filter:blur(0px); }
+    15%  { opacity:0.7; transform:translateX(-12px) translateY(-25px) scale(0.9); filter:blur(5px); }
+    50%  { opacity:0.5; transform:translateX(-30px) translateY(-55px) scale(1.3); filter:blur(10px); }
+    100% { opacity:0; transform:translateX(-50px) translateY(-80px) scale(1.8); filter:blur(16px); }
   }
 
-  @keyframes smokeLeft {
-    0%   { opacity:0; transform:translateX(0) translateY(0) scale(0.3); filter:blur(0px); }
-    20%  { opacity:0.5; transform:translateX(-10px) translateY(-20px) scale(0.7); filter:blur(4px); }
-    60%  { opacity:0.3; transform:translateX(-25px) translateY(-45px) scale(1); filter:blur(8px); }
-    100% { opacity:0; transform:translateX(-40px) translateY(-60px) scale(1.3); filter:blur(12px); }
+  @keyframes smokeLeft2 {
+    0%   { opacity:0; transform:translateX(0) translateY(0) scale(0.35); filter:blur(0px); }
+    20%  { opacity:0.65; transform:translateX(-8px) translateY(-20px) scale(0.8); filter:blur(4px); }
+    55%  { opacity:0.45; transform:translateX(-22px) translateY(-50px) scale(1.2); filter:blur(9px); }
+    100% { opacity:0; transform:translateX(-38px) translateY(-75px) scale(1.6); filter:blur(14px); }
   }
 
-  @keyframes smokeRight {
+  @keyframes smokeLeft3 {
     0%   { opacity:0; transform:translateX(0) translateY(0) scale(0.3); filter:blur(0px); }
-    20%  { opacity:0.5; transform:translateX(10px) translateY(-20px) scale(0.7); filter:blur(4px); }
-    60%  { opacity:0.3; transform:translateX(25px) translateY(-45px) scale(1); filter:blur(8px); }
-    100% { opacity:0; transform:translateX(40px) translateY(-60px) scale(1.3); filter:blur(12px); }
+    18%  { opacity:0.6; transform:translateX(-15px) translateY(-18px) scale(0.75); filter:blur(6px); }
+    60%  { opacity:0.4; transform:translateX(-35px) translateY(-48px) scale(1.15); filter:blur(11px); }
+    100% { opacity:0; transform:translateX(-55px) translateY(-70px) scale(1.5); filter:blur(15px); }
+  }
+
+  @keyframes smokeRight1 {
+    0%   { opacity:0; transform:translateX(0) translateY(0) scale(0.4); filter:blur(0px); }
+    15%  { opacity:0.7; transform:translateX(12px) translateY(-25px) scale(0.9); filter:blur(5px); }
+    50%  { opacity:0.5; transform:translateX(30px) translateY(-55px) scale(1.3); filter:blur(10px); }
+    100% { opacity:0; transform:translateX(50px) translateY(-80px) scale(1.8); filter:blur(16px); }
+  }
+
+  @keyframes smokeRight2 {
+    0%   { opacity:0; transform:translateX(0) translateY(0) scale(0.35); filter:blur(0px); }
+    20%  { opacity:0.65; transform:translateX(8px) translateY(-20px) scale(0.8); filter:blur(4px); }
+    55%  { opacity:0.45; transform:translateX(22px) translateY(-50px) scale(1.2); filter:blur(9px); }
+    100% { opacity:0; transform:translateX(38px) translateY(-75px) scale(1.6); filter:blur(14px); }
+  }
+
+  @keyframes smokeRight3 {
+    0%   { opacity:0; transform:translateX(0) translateY(0) scale(0.3); filter:blur(0px); }
+    18%  { opacity:0.6; transform:translateX(15px) translateY(-18px) scale(0.75); filter:blur(6px); }
+    60%  { opacity:0.4; transform:translateX(35px) translateY(-48px) scale(1.15); filter:blur(11px); }
+    100% { opacity:0; transform:translateX(55px) translateY(-70px) scale(1.5); filter:blur(15px); }
+  }
+
+  @keyframes smokeCenter {
+    0%   { opacity:0; transform:translateY(0) scale(0.5); filter:blur(0px); }
+    25%  { opacity:0.55; transform:translateY(-30px) scale(1); filter:blur(7px); }
+    65%  { opacity:0.35; transform:translateY(-60px) scale(1.4); filter:blur(12px); }
+    100% { opacity:0; transform:translateY(-90px) scale(1.9); filter:blur(18px); }
   }
 
   .hit-target {
@@ -171,52 +205,114 @@ const CSS = `
   }
 
   .hit-target td {
-    animation:chicagoExecution 5s ease-out forwards;
+    animation:chicagoExecution 8s ease-out forwards;
     overflow:hidden;
   }
 
-  /* Smoke particles using pseudo-elements on first and last cells */
+  /* HEAVY SMOKE - Multiple particles from all sides with varying timing */
   .hit-target td:first-child::before,
-  .hit-target td:first-child::after,
-  .hit-target td:last-child::before,
-  .hit-target td:last-child::after {
+  .hit-target td:first-child::after {
     content:"";
     position:absolute;
-    width:30px;
-    height:30px;
-    background:radial-gradient(circle, rgba(200,200,200,0.4) 0%, rgba(150,150,150,0.2) 40%, transparent 70%);
+    width:40px;
+    height:40px;
+    background:radial-gradient(circle, rgba(220,220,220,0.55) 0%, rgba(180,180,180,0.35) 30%, rgba(120,120,120,0.15) 60%, transparent 80%);
     border-radius:50%;
     pointer-events:none;
     z-index:1;
   }
 
   .hit-target td:first-child::before {
-    bottom:10px;
-    left:5px;
-    animation:smokeLeft 4s ease-out 0.5s forwards;
+    bottom:8px;
+    left:3px;
+    animation:smokeLeft1 6s ease-out 0.8s forwards;
   }
 
   .hit-target td:first-child::after {
-    bottom:15px;
-    left:10px;
-    animation:smokeLeft 4.2s ease-out 1s forwards;
+    bottom:18px;
+    left:12px;
+    width:35px;
+    height:35px;
+    animation:smokeLeft2 6.5s ease-out 1.5s forwards;
+  }
+
+  .hit-target td:nth-child(2)::before,
+  .hit-target td:nth-child(2)::after {
+    content:"";
+    position:absolute;
+    width:38px;
+    height:38px;
+    background:radial-gradient(circle, rgba(200,200,200,0.5) 0%, rgba(160,160,160,0.3) 35%, rgba(100,100,100,0.12) 65%, transparent 82%);
+    border-radius:50%;
+    pointer-events:none;
+    z-index:1;
+  }
+
+  .hit-target td:nth-child(2)::before {
+    bottom:12px;
+    left:15px;
+    animation:smokeLeft3 6.2s ease-out 1.1s forwards;
+  }
+
+  .hit-target td:nth-child(2)::after {
+    bottom:5px;
+    left:25px;
+    animation:smokeCenter 6.8s ease-out 1.8s forwards;
+  }
+
+  .hit-target td:last-child::before,
+  .hit-target td:last-child::after {
+    content:"";
+    position:absolute;
+    width:40px;
+    height:40px;
+    background:radial-gradient(circle, rgba(220,220,220,0.55) 0%, rgba(180,180,180,0.35) 30%, rgba(120,120,120,0.15) 60%, transparent 80%);
+    border-radius:50%;
+    pointer-events:none;
+    z-index:1;
   }
 
   .hit-target td:last-child::before {
-    bottom:10px;
-    right:5px;
-    animation:smokeRight 4s ease-out 0.7s forwards;
+    bottom:8px;
+    right:3px;
+    animation:smokeRight1 6s ease-out 0.9s forwards;
   }
 
   .hit-target td:last-child::after {
-    bottom:15px;
-    right:10px;
-    animation:smokeRight 4.2s ease-out 1.2s forwards;
+    bottom:18px;
+    right:12px;
+    width:35px;
+    height:35px;
+    animation:smokeRight2 6.5s ease-out 1.6s forwards;
+  }
+
+  .hit-target td:nth-last-child(2)::before,
+  .hit-target td:nth-last-child(2)::after {
+    content:"";
+    position:absolute;
+    width:38px;
+    height:38px;
+    background:radial-gradient(circle, rgba(200,200,200,0.5) 0%, rgba(160,160,160,0.3) 35%, rgba(100,100,100,0.12) 65%, transparent 82%);
+    border-radius:50%;
+    pointer-events:none;
+    z-index:1;
+  }
+
+  .hit-target td:nth-last-child(2)::before {
+    bottom:12px;
+    right:15px;
+    animation:smokeRight3 6.2s ease-out 1.2s forwards;
+  }
+
+  .hit-target td:nth-last-child(2)::after {
+    bottom:5px;
+    right:25px;
+    animation:smokeCenter 6.8s ease-out 2s forwards;
   }
 
   /* Kill shot lands slightly later on the title column for stagger feel */
   .hit-target td:nth-child(3) {
-    animation:chicagoExecution 5s ease-out 0.06s forwards;
+    animation:chicagoExecution 8s ease-out 0.08s forwards;
     overflow:hidden;
   }
 
@@ -702,14 +798,14 @@ export default function Dashboard() {
         setConfirmStep(0);
         setPassword("");
 
-        // CHICAGO 3-SHOT EXECUTION ANIMATION (v5.3.4.5)
-        // Slowed down with smoke effects: target lock + 3 muzzle flashes + dramatic collapse (5s total)
+        // CHICAGO 3-SHOT EXECUTION ANIMATION (v5.3.4.6)
+        // 8 seconds with NEON flashes + HEAVY smoke - maximum cinematic drama
         console.log("🎯 Chicago Style: Executing", toDeleteIds.size, "titles");
         setCrumplingIds(toDeleteIds);
 
         // Wait for full animation to complete before removing from DOM
-        // 5s animation + small buffer
-        await new Promise(r => setTimeout(r, 5200));
+        // 8s animation + small buffer
+        await new Promise(r => setTimeout(r, 8200));
 
         // Execute actual deletion API call
         const ratingKeys = toDelete.map(m => m.ratingKey);
