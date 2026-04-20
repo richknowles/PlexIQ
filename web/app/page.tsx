@@ -113,8 +113,8 @@ const CSS = `
   }
   .fading-out td { animation:fadeRowOut 0.38s ease-in forwards; overflow:hidden; }
 
-  /* ── Chicago Style 3-Shot Execution Animation (v5.3.4.6) ── */
-  /* 8 seconds, heavy smoke, neon muzzle flashes - maximum drama */
+  /* ── Chicago Style 3-Shot Execution Animation (v5.3.4.7) ── */
+  /* 4 seconds, heavy smoke, neon muzzle flashes - fast-paced action */
 
   @keyframes chicagoExecution {
     /* Target acquired - pulsing dark red crosshair */
@@ -205,7 +205,7 @@ const CSS = `
   }
 
   .hit-target td {
-    animation:chicagoExecution 8s ease-out forwards;
+    animation:chicagoExecution 4s ease-out forwards;
     overflow:hidden;
   }
 
@@ -225,7 +225,7 @@ const CSS = `
   .hit-target td:first-child::before {
     bottom:8px;
     left:3px;
-    animation:smokeLeft1 6s ease-out 0.8s forwards;
+    animation:smokeLeft1 3s ease-out 0.4s forwards;
   }
 
   .hit-target td:first-child::after {
@@ -233,7 +233,7 @@ const CSS = `
     left:12px;
     width:35px;
     height:35px;
-    animation:smokeLeft2 6.5s ease-out 1.5s forwards;
+    animation:smokeLeft2 3.25s ease-out 0.75s forwards;
   }
 
   .hit-target td:nth-child(2)::before,
@@ -251,13 +251,13 @@ const CSS = `
   .hit-target td:nth-child(2)::before {
     bottom:12px;
     left:15px;
-    animation:smokeLeft3 6.2s ease-out 1.1s forwards;
+    animation:smokeLeft3 3.1s ease-out 0.55s forwards;
   }
 
   .hit-target td:nth-child(2)::after {
     bottom:5px;
     left:25px;
-    animation:smokeCenter 6.8s ease-out 1.8s forwards;
+    animation:smokeCenter 3.4s ease-out 0.9s forwards;
   }
 
   .hit-target td:last-child::before,
@@ -275,7 +275,7 @@ const CSS = `
   .hit-target td:last-child::before {
     bottom:8px;
     right:3px;
-    animation:smokeRight1 6s ease-out 0.9s forwards;
+    animation:smokeRight1 3s ease-out 0.45s forwards;
   }
 
   .hit-target td:last-child::after {
@@ -283,7 +283,7 @@ const CSS = `
     right:12px;
     width:35px;
     height:35px;
-    animation:smokeRight2 6.5s ease-out 1.6s forwards;
+    animation:smokeRight2 3.25s ease-out 0.8s forwards;
   }
 
   .hit-target td:nth-last-child(2)::before,
@@ -301,18 +301,18 @@ const CSS = `
   .hit-target td:nth-last-child(2)::before {
     bottom:12px;
     right:15px;
-    animation:smokeRight3 6.2s ease-out 1.2s forwards;
+    animation:smokeRight3 3.1s ease-out 0.6s forwards;
   }
 
   .hit-target td:nth-last-child(2)::after {
     bottom:5px;
     right:25px;
-    animation:smokeCenter 6.8s ease-out 2s forwards;
+    animation:smokeCenter 3.4s ease-out 1s forwards;
   }
 
   /* Kill shot lands slightly later on the title column for stagger feel */
   .hit-target td:nth-child(3) {
-    animation:chicagoExecution 8s ease-out 0.08s forwards;
+    animation:chicagoExecution 4s ease-out 0.04s forwards;
     overflow:hidden;
   }
 
@@ -798,14 +798,14 @@ export default function Dashboard() {
         setConfirmStep(0);
         setPassword("");
 
-        // CHICAGO 3-SHOT EXECUTION ANIMATION (v5.3.4.6)
-        // 8 seconds with NEON flashes + HEAVY smoke - maximum cinematic drama
+        // CHICAGO 3-SHOT EXECUTION ANIMATION (v5.3.4.7)
+        // 4 seconds with NEON flashes + HEAVY smoke - fast-paced cinematic action
         console.log("🎯 Chicago Style: Executing", toDeleteIds.size, "titles");
         setCrumplingIds(toDeleteIds);
 
         // Wait for full animation to complete before removing from DOM
-        // 8s animation + small buffer
-        await new Promise(r => setTimeout(r, 8200));
+        // 4s animation + small buffer
+        await new Promise(r => setTimeout(r, 4200));
 
         // Execute actual deletion API call
         const ratingKeys = toDelete.map(m => m.ratingKey);
