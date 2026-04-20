@@ -900,14 +900,14 @@ export default function Dashboard() {
   const showPoliceLights = !isDryRun && confirmStep > 0;
 
   // 💣 BOMB BUILDER - Chicago Mob Hit Planning (v5.3.4.9)
-  const getBombStatus = () => {
+  const bombStatus = (() => {
     const count = selectedIds.size;
     if (count === 0) return { icon: "", label: "SELECT TARGETS" };
     if (count <= 3) return { icon: "💣", label: `${count} TARGET${count > 1 ? 'S' : ''}` };
     if (count <= 7) return { icon: "💣🧨", label: `${count} TARGETS` };
     if (count <= 10) return { icon: "💣🧨⏱️", label: `${count} TARGETS` };
     return { icon: "💣🧨⏱️💥", label: `${count} TARGETS`, armed: true };
-  };
+  })();
 
   const ScoreCell = ({ score }: { score: number }) => {
     const color = score >= 85 ? "#E84040" : score >= 65 ? "#C9A84C" : "#8B7355";
@@ -1063,12 +1063,12 @@ export default function Dashboard() {
                 ) : (
                   <>
                     <span className={selectedIds.size >= 10 ? "bomb-icon bomb-armed" : "bomb-icon"}>
-                      {getBombStatus().icon}
+                      {bombStatus.icon}
                     </span>
                     {selectedIds.size === 0 ? (
                       " SELECT TARGETS"
                     ) : (
-                      <> {selectedIds.size >= 10 ? "💥 DETONATE" : "DETONATE"} — {getBombStatus().label}</>
+                      <> {selectedIds.size >= 10 ? "💥 DETONATE" : "DETONATE"} — {bombStatus.label}</>
                     )}
                     {selectedIds.size >= 10 && (
                       <span style={{
