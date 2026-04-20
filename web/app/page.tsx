@@ -1052,25 +1052,37 @@ export default function Dashboard() {
                 className={"u-btn danger" + (!isDryRun ? " live" : "")}
                 disabled={!stats || isAnalyzing || selectedIds.size === 0}
                 onClick={handleDeleteClick}
-                title={selectedIds.size === 0 ? "Select targets to arm the bomb" : undefined}
+                title={selectedIds.size === 0 ? "Select targets to build the bomb" : undefined}
                 style={{
                   position: "relative",
                   animation: !isDryRun && selectedIds.size >= 10 ? "armedPulse 1.5s ease-in-out infinite" : "none",
                 }}
               >
-                {isDryRun ? (
-                  `🌭 HIT LIST${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""} (DRY RUN)`
+                {/* 💣 BOMB BUILDER - Both Dry Run and Live Mode */}
+                <span className={!isDryRun && selectedIds.size >= 10 ? "bomb-icon bomb-armed" : "bomb-icon"}>
+                  {bombStatus.icon}
+                </span>
+                {selectedIds.size === 0 ? (
+                  " SELECT TARGETS"
                 ) : (
                   <>
-                    <span className={selectedIds.size >= 10 ? "bomb-icon bomb-armed" : "bomb-icon"}>
-                      {bombStatus.icon}
-                    </span>
-                    {selectedIds.size === 0 ? (
-                      " SELECT TARGETS"
-                    ) : (
-                      <> {selectedIds.size >= 10 ? "💥 DETONATE" : "DETONATE"} — {bombStatus.label}</>
+                    {" "}
+                    {!isDryRun && selectedIds.size >= 10 ? "💥 " : ""}
+                    {isDryRun ? "PRACTICE HIT" : "DETONATE"} — {bombStatus.label}
+                    {isDryRun && (
+                      <span style={{
+                        marginLeft: "8px",
+                        padding: "2px 6px",
+                        background: "rgba(201,168,76,0.2)",
+                        border: "1px solid #C9A84C",
+                        borderRadius: "2px",
+                        fontSize: "9px",
+                        letterSpacing: "0.08em",
+                      }}>
+                        DRY RUN
+                      </span>
                     )}
-                    {selectedIds.size >= 10 && (
+                    {!isDryRun && selectedIds.size >= 10 && (
                       <span style={{
                         marginLeft: "8px",
                         padding: "2px 6px",
@@ -1086,13 +1098,13 @@ export default function Dashboard() {
                     )}
                   </>
                 )}
-                {/* Target counter badge */}
-                {!isDryRun && selectedIds.size > 0 && (
+                {/* Target counter badge - both modes */}
+                {selectedIds.size > 0 && (
                   <span style={{
                     position: "absolute",
                     top: "-8px",
                     right: "-8px",
-                    background: selectedIds.size >= 10 ? "#E84040" : "#C9A84C",
+                    background: !isDryRun && selectedIds.size >= 10 ? "#E84040" : "#C9A84C",
                     color: "#0D0A04",
                     fontFamily: "var(--font-audiowide)",
                     fontSize: "10px",
@@ -1100,8 +1112,8 @@ export default function Dashboard() {
                     padding: "4px 8px",
                     borderRadius: "12px",
                     border: "2px solid #0D0A04",
-                    boxShadow: selectedIds.size >= 10 ? "0 0 20px rgba(255,80,20,0.8)" : "0 0 12px rgba(201,168,76,0.6)",
-                    animation: selectedIds.size >= 10 ? "bodyCountPulse 1s ease-in-out infinite" : "none",
+                    boxShadow: !isDryRun && selectedIds.size >= 10 ? "0 0 20px rgba(255,80,20,0.8)" : "0 0 12px rgba(201,168,76,0.6)",
+                    animation: !isDryRun && selectedIds.size >= 10 ? "bodyCountPulse 1s ease-in-out infinite" : "none",
                   }}>
                     {selectedIds.size}
                   </span>
