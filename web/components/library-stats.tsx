@@ -72,28 +72,28 @@ export default function LibraryStatsDisplay({ stats, loading = false }: LibraryS
         </div>
       </div>
 
-      {/* Deletion Candidates Panel */}
+      {/* Target Candidates Panel - Bomb Builder Theme */}
       <div className="bg-gradient-to-br from-amber-900/20 to-red-900/20 rounded-lg p-6 border border-amber-700/30">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="text-amber-400 text-sm font-medium mb-2">Deletion Candidates</div>
+            <div className="text-amber-400 text-sm font-medium mb-2">💣 Potential Targets</div>
             <div className="text-4xl font-bold text-gray-100 mb-2">
               {stats.deletionCandidates.toLocaleString()}
             </div>
             <div className="text-sm text-gray-400">
-              Potential space saved: <span className="text-green-400 font-semibold">
+              Payload size: <span className="text-green-400 font-semibold">
                 {formatSize(stats.potentialSpaceSaved)}
               </span>
             </div>
           </div>
-          <div className="text-5xl">🗑️</div>
+          <div className="text-5xl">🎯</div>
         </div>
 
         {stats.deletionCandidates > 0 && (
           <div className="mt-4 pt-4 border-t border-amber-700/30">
             <div className="text-xs text-gray-400">
-              <span className="text-amber-400 font-semibold">{stats.deletionCandidates}</span> items
-              meet the deletion threshold. Review recommendations before proceeding.
+              <span className="text-amber-400 font-semibold">{stats.deletionCandidates}</span> targets
+              acquired. Select items to build your bomb.
             </div>
           </div>
         )}
