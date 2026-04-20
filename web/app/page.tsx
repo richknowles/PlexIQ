@@ -87,6 +87,31 @@ const CSS = `
     50%      { transform:scale(1.1); box-shadow:0 0 20px rgba(232,64,64,0.9); }
   }
 
+  /* ── Bomb builder animations (v5.3.4.9) ── */
+  @keyframes bombPulse {
+    0%, 100% { transform:scale(1); filter:brightness(1); }
+    50%      { transform:scale(1.08); filter:brightness(1.3); }
+  }
+
+  @keyframes bombGlow {
+    0%, 100% { text-shadow:0 0 8px rgba(255,100,20,0.4), 0 0 16px rgba(255,60,10,0.2); }
+    50%      { text-shadow:0 0 16px rgba(255,120,30,0.8), 0 0 28px rgba(255,80,15,0.5), 0 0 40px rgba(255,60,10,0.3); }
+  }
+
+  @keyframes armedPulse {
+    0%, 100% { background:linear-gradient(135deg,#3A0808 0%,#1A0404 100%); box-shadow:0 0 16px rgba(232,64,64,0.4), inset 0 0 20px rgba(255,80,20,0.15); }
+    50%      { background:linear-gradient(135deg,#4A0A0A 0%,#2A0606 100%); box-shadow:0 0 28px rgba(232,64,64,0.7), 0 0 40px rgba(255,100,30,0.4), inset 0 0 30px rgba(255,100,30,0.25); }
+  }
+
+  .bomb-icon {
+    display:inline-block;
+    animation:bombPulse 1.2s ease-in-out infinite;
+  }
+
+  .bomb-armed {
+    animation:bombGlow 0.8s ease-in-out infinite;
+  }
+
   /* ── Tabs ── */
   .tab-btn {
     font-family:var(--font-audiowide); font-size:11px; letter-spacing:0.12em;
@@ -874,12 +899,14 @@ export default function Dashboard() {
   const deleteTargets  = selectedIds.size; // Same - only checked items
   const showPoliceLights = !isDryRun && confirmStep > 0;
 
-  // Wastebasket visual states (v5.3.4.1)
-  const getWastebasketIcon = () => {
+  // 💣 BOMB BUILDER - Chicago Mob Hit Planning (v5.3.4.9)
+  const getBombStatus = () => {
     const count = selectedIds.size;
-    if (count === 0) return "🗑️";
-    if (count >= 10) return "🗑️💥"; // Full/overflowing
-    return "🗑️📄"; // Filling
+    if (count === 0) return { icon: "", label: "SELECT TARGETS" };
+    if (count <= 3) return { icon: "💣", label: `${count} TARGET${count > 1 ? 'S' : ''}` };
+    if (count <= 7) return { icon: "💣🧨", label: `${count} TARGETS` };
+    if (count <= 10) return { icon: "💣🧨⏱️", label: `${count} TARGETS` };
+    return { icon: "💣🧨⏱️💥", label: `${count} TARGETS`, armed: true };
   };
 
   const ScoreCell = ({ score }: { score: number }) => {
@@ -1025,15 +1052,41 @@ export default function Dashboard() {
                 className={"u-btn danger" + (!isDryRun ? " live" : "")}
                 disabled={!stats || isAnalyzing || selectedIds.size === 0}
                 onClick={handleDeleteClick}
-                title={selectedIds.size === 0 ? "Check items to delete first" : undefined}
+                title={selectedIds.size === 0 ? "Select targets to arm the bomb" : undefined}
                 style={{
                   position: "relative",
+                  animation: !isDryRun && selectedIds.size >= 10 ? "armedPulse 1.5s ease-in-out infinite" : "none",
                 }}
               >
-                {isDryRun
-                  ? `🌭 HIT LIST${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""} (DRY RUN)`
-                  : `${getWastebasketIcon()} DELETE ${selectedIds.size > 0 ? selectedIds.size : filteredMovies.length} FILES — LIVE`}
-                {/* Body count badge when items selected */}
+                {isDryRun ? (
+                  `🌭 HIT LIST${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""} (DRY RUN)`
+                ) : (
+                  <>
+                    <span className={selectedIds.size >= 10 ? "bomb-icon bomb-armed" : "bomb-icon"}>
+                      {getBombStatus().icon}
+                    </span>
+                    {selectedIds.size === 0 ? (
+                      " SELECT TARGETS"
+                    ) : (
+                      <> {selectedIds.size >= 10 ? "💥 DETONATE" : "DETONATE"} — {getBombStatus().label}</>
+                    )}
+                    {selectedIds.size >= 10 && (
+                      <span style={{
+                        marginLeft: "8px",
+                        padding: "2px 6px",
+                        background: "rgba(255,80,20,0.3)",
+                        border: "1px solid #FF5020",
+                        borderRadius: "2px",
+                        fontSize: "9px",
+                        letterSpacing: "0.08em",
+                        animation: "bombGlow 0.8s ease-in-out infinite",
+                      }}>
+                        ARMED
+                      </span>
+                    )}
+                  </>
+                )}
+                {/* Target counter badge */}
                 {!isDryRun && selectedIds.size > 0 && (
                   <span style={{
                     position: "absolute",
@@ -1047,7 +1100,7 @@ export default function Dashboard() {
                     padding: "4px 8px",
                     borderRadius: "12px",
                     border: "2px solid #0D0A04",
-                    boxShadow: "0 0 12px rgba(201,168,76,0.6)",
+                    boxShadow: selectedIds.size >= 10 ? "0 0 20px rgba(255,80,20,0.8)" : "0 0 12px rgba(201,168,76,0.6)",
                     animation: selectedIds.size >= 10 ? "bodyCountPulse 1s ease-in-out infinite" : "none",
                   }}>
                     {selectedIds.size}
