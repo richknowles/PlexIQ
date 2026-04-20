@@ -1516,9 +1516,6 @@ export default function Dashboard() {
                     </span>
                   </div>
 
-                {/* TABLE VIEW */}
-                {viewMode === "table" && (
-                  <>
                 <div style={{ padding:"0 16px 16px", overflowX:"auto" }}>
                   <table style={{ width:"100%", borderCollapse:"collapse" }}>
                     <thead>
@@ -1725,29 +1722,10 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
-                  </>
-                )}
-
-                {/* GRID VIEW - v5.4.0 Target Acquisition */}
-                {viewMode === "grid" && (
-                  <PosterGrid
-                    movies={visibleFiltered}
-                    selectedIds={selectedIds}
-                    onToggleSelect={(id) => {
-                      const newSet = new Set(selectedIds);
-                      if (newSet.has(id)) {
-                        newSet.delete(id);
-                      } else {
-                        newSet.add(id);
-                      }
-                      setSelectedIds(newSet);
-                    }}
-                    plexHost={process.env.NEXT_PUBLIC_PLEX_HOST || "http://10.0.0.10:32400"}
-                    plexToken={process.env.NEXT_PUBLIC_PLEX_TOKEN || "GifXg9g3Ao4LcRbpCzwZ"}
-                  />
-                )}
               </div>
             )}
+          </>
+          )}
           </div>
         </div>
       </main>
