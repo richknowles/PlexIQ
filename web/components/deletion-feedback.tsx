@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * PlexIQ v5.3.4 - Deletion Success Feedback Banner
+ * PlexIQ v5.4.0 - Deletion Success Feedback Banner
  * Chicago Edition - Art Deco styled success notification
  */
 

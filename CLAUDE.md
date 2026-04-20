@@ -13,13 +13,8 @@ No exceptions. No Co-Authored-By lines. No Claude attribution.
 PlexIQ is a Next.js + TypeScript Plex media library manager.
 The actual app lives in `web/`. Run `npm run dev` from `web/` to start.
 
-## Current Branch
-<<<<<<< HEAD
-`claude/plexiq-v5.4.0-target-acquisition` — merges v5.3.5 weapon system + poster grid view.
-=======
-`claude/plexiq-v5.3.5-file-size-scoring` — weapon select system + file size scoring fix.
-Next version is 5.4 (adds movie posters).
->>>>>>> origin/claude/plexiq-v5.3.5-file-size-scoring
+## Current Version: 5.4.0 — Target Acquisition
+Branch: `claude/plexiq-v5.4.0-target-acquisition`
 
 ## Aesthetic
 Chicago Mob / 1930s noir. Gold art deco. Dark backgrounds.
@@ -33,7 +28,6 @@ Do NOT revert to single-pass or drop file size from scoring.
 Four weapons: pistol, tommy (Chicago Execution), sniper (scope animation), c4.
 All delete actions route through weapon select before confirm/password flow.
 The sniper scope uses GSAP (dynamically imported). Do not remove gsap dependency.
-<<<<<<< HEAD
 
 ## Poster Grid (`web/components/poster-grid.tsx`)
 130x195px posters in responsive grid. Default view (grid beats table).
@@ -44,5 +38,3 @@ Grid uses sortedMovies (all items), not paginated visibleFiltered.
 ## v5.4.0 Vision
 Sniper scope should show the actual movie poster as the target.
 Firing range direction: poster on paper target, slides out, bullet holes punch through.
-=======
->>>>>>> origin/claude/plexiq-v5.3.5-file-size-scoring

@@ -84,13 +84,13 @@ const CSS = `
   .dome-l .dome-inner { animation:spinDomeL 0.55s linear infinite; }
   .dome-r .dome-inner { animation:spinDomeR 0.55s linear infinite; }
 
-  /* ── Body count badge pulse (v5.3.4.1) ── */
+  /* ── Body count badge pulse (v5.4.0.1) ── */
   @keyframes bodyCountPulse {
     0%, 100% { transform:scale(1); box-shadow:0 0 12px rgba(232,64,64,0.6); }
     50%      { transform:scale(1.1); box-shadow:0 0 20px rgba(232,64,64,0.9); }
   }
 
-  /* ── Bomb builder animations (v5.3.4.9) ── */
+  /* ── Bomb builder animations (v5.4.0.9) ── */
   @keyframes bombPulse {
     0%, 100% { transform:scale(1); filter:brightness(1); }
     50%      { transform:scale(1.08); filter:brightness(1.3); }
@@ -141,7 +141,7 @@ const CSS = `
   }
   .fading-out td { animation:fadeRowOut 0.38s ease-in forwards; overflow:hidden; }
 
-  /* ── Chicago Style 3-Shot Execution Animation (v5.3.4.8) ── */
+  /* ── Chicago Style 3-Shot Execution Animation (v5.4.0.8) ── */
   /* 3 seconds, heavy smoke, neon muzzle flashes - rapid-fire execution */
 
   @keyframes chicagoExecution {
@@ -503,7 +503,7 @@ export default function Dashboard() {
   // View mode state (v5.4.0 - Target Acquisition)
   const [viewMode,         setViewMode]         = useState<"table"|"grid">("grid");
 
-  // Deletion animation state (v5.3.4)
+  // Deletion animation state (v5.4.0)
   const [deletingIds,      setDeletingIds]      = useState<Set<number>>(new Set());
   const [crumplingIds,     setCrumplingIds]     = useState<Set<number>>(new Set());
   const [slidingIds,       setSlidingIds]       = useState<Set<number>>(new Set());
@@ -514,7 +514,7 @@ export default function Dashboard() {
     titles: string[];
   } | null>(null);
 
-  // Weapon select + sniper state (v5.3.5)
+  // Weapon select + sniper state (v5.4.0)
   type Weapon = 'tommy' | 'sniper' | 'pistol' | 'c4';
   type SniperPhase = 'idle' | 'scoping' | 'locked' | 'fired' | 'dead';
   const [weaponSelectOpen,  setWeaponSelectOpen]  = useState(false);
@@ -535,7 +535,7 @@ export default function Dashboard() {
   }, []);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // SESSION PERSISTENCE v5.3.2 - Survives refresh, disconnect, accidental pulls
+  // SESSION PERSISTENCE v5.4.0 - Survives refresh, disconnect, accidental pulls
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   // Restore session on mount
@@ -859,7 +859,7 @@ export default function Dashboard() {
       }
 
       if (!isDryRun) {
-        // ── Real Plex deletion with animations (v5.3.4.1) ──
+        // ── Real Plex deletion with animations (v5.4.0.1) ──
         // ONLY delete manually checked items (never auto-delete based on threshold)
         if (selectedIds.size === 0) {
           alert("No items selected for deletion. Please check items you want to delete.");
@@ -1041,7 +1041,7 @@ export default function Dashboard() {
 
   const showPoliceLights = !isDryRun && confirmStep > 0;
 
-  // 💣 BOMB BUILDER - Chicago Mob Hit Planning (v5.3.4.9)
+  // 💣 BOMB BUILDER - Chicago Mob Hit Planning (v5.4.0.9)
   const bombStatus = (() => {
     const count = selectedIds.size;
     if (count === 0) return { icon: "", label: "SELECT TARGETS" };
@@ -1588,7 +1588,7 @@ export default function Dashboard() {
                     </tbody>
                   </table>
                 </div>
-                {/* Pagination Controls v5.3.4 - Enhanced with page numbers */}
+                {/* Pagination Controls v5.4.0 - Enhanced with page numbers */}
                 <div style={{ borderTop:"1px solid #1A1408", padding:"20px 24px" }}>
                   {/* Top row: page size selector and info */}
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px" }}>
@@ -1950,7 +1950,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Deletion Success Feedback Banner (v5.3.4) */}
+      {/* Deletion Success Feedback Banner (v5.4.0) */}
       {deletionStats && (
         <DeletionFeedback
           count={deletionStats.count}
