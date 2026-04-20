@@ -935,7 +935,7 @@ export default function Dashboard() {
                   PLEXIQ
                 </h1>
                 <p style={{ margin:0, fontSize:"12px", letterSpacing:"0.25em", color:"#4A3F28", fontFamily:"var(--font-audiowide)", marginTop:"2px" }}>
-                  v5.3.4 · CHICAGO EDITION
+                  v5.4.0 · TARGET ACQUISITION
                 </p>
               </div>
             </div>
@@ -1155,7 +1155,7 @@ export default function Dashboard() {
             {!stats && !isAnalyzing && (
               <div className="deco-card" style={{ padding:"64px 40px", textAlign:"center" }}>
                 <div style={{ fontSize:"72px", marginBottom:"20px" }}>🌭</div>
-                <h2 style={{ fontFamily:"var(--font-audiowide)", fontSize:"22px", letterSpacing:"0.1em", color:"#C9A84C", margin:"0 0 12px" }}>PLEXIQ v5.3.4</h2>
+                <h2 style={{ fontFamily:"var(--font-audiowide)", fontSize:"22px", letterSpacing:"0.1em", color:"#C9A84C", margin:"0 0 12px" }}>PLEXIQ v5.4.0</h2>
                 <p style={{ color:"#4A3F28", fontSize:"13px", lineHeight:1.7, maxWidth:"360px", margin:"0 auto 28px" }}>
                   Chicago, 1931. You run this library. One slider. You decide what stays and what goes.
                 </p>
@@ -1609,7 +1609,7 @@ export default function Dashboard() {
       <footer style={{ padding:"16px 24px", maxWidth:"1280px", margin:"0 auto" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", letterSpacing:"0.15em", color:"#E84040" }}>
-            PLEXIQ v5.3.4 ·{" "}
+            PLEXIQ v5.4.0 ·{" "}
             <a href="https://resume.richknowles.com" target="_blank" rel="noopener noreferrer" className="resume-link">RICH KNOWLES</a>
           </div>
           <div style={{ display:"flex", gap:"20px" }}>
