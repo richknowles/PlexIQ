@@ -5,6 +5,7 @@ import ThresholdSlider from "@/components/threshold-slider";
 import LibraryStatsDisplay from "@/components/library-stats";
 import MustardProgress from "@/components/mustard-progress";
 import DeletionFeedback from "@/components/deletion-feedback";
+import PosterGrid from "@/components/poster-grid";
 import { LibraryStats } from "@/types/plexiq";
 
 interface PlexMovie {
@@ -17,6 +18,7 @@ interface PlexMovie {
   sizeBytes: number;
   rating:    number;
   plays:     number;
+  thumb?:    string; // v5.4.0 - Poster URL from Plex
 }
 
 interface PlexLibrary {
@@ -464,6 +466,9 @@ export default function Dashboard() {
   const [globalCutList,    setGlobalCutList]    = useState<Map<string, Set<number>>>(new Map()); // libraryKey -> Set of movie IDs
   const [sortBy,           setSortBy]           = useState<"title"|"score"|"size"|"rating"|"plays">("score");
   const [sortDir,          setSortDir]          = useState<"asc"|"desc">("desc");
+
+  // View mode state (v5.4.0 - Target Acquisition)
+  const [viewMode,         setViewMode]         = useState<"table"|"grid">("table");
 
   // Deletion animation state (v5.3.4)
   const [deletingIds,      setDeletingIds]      = useState<Set<number>>(new Set());
@@ -1314,16 +1319,58 @@ export default function Dashboard() {
               );
             })()}
 
-            {/* ── THE HIT LIST TABLE ── */}
+            {/* ── THE HIT LIST TABLE/GRID ── */}
             {stats && !isAnalyzing && activeTab === "analyze" && (
               <div className="deco-card" style={{ padding:0, overflow:"hidden" }}>
-                <div style={{ display:"flex", borderBottom:"1px solid #2A2318", padding:"0 16px" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid #2A2318", padding:"0 16px" }}>
                   <button className={"tab-btn active"}>
                     🎯 THE HIT LIST ({cutListCount})
                     {cutListCount === 0 && <span style={{ marginLeft:"8px", color:"#6B5E3C", fontSize:"9px" }}>(check items you want to delete)</span>}
                     {cutListCount > 0 && filteredMovies.length > cutListCount && <span style={{ marginLeft:"8px", color:"#4A3F28", fontSize:"9px" }}>(of {filteredMovies.length} candidates)</span>}
                   </button>
+
+                  {/* View Toggle - v5.4.0 */}
+                  <div style={{ display:"flex", gap:"4px", padding:"6px 0" }}>
+                    <button
+                      onClick={() => setViewMode("table")}
+                      style={{
+                        background: viewMode === "table" ? "#C9A84C22" : "none",
+                        border: `1px solid ${viewMode === "table" ? "#C9A84C" : "#2A2318"}`,
+                        color: viewMode === "table" ? "#C9A84C" : "#6B5E3C",
+                        fontFamily: "var(--font-audiowide)",
+                        fontSize: "9px",
+                        letterSpacing: "0.08em",
+                        padding: "6px 12px",
+                        cursor: "pointer",
+                        borderRadius: "2px 0 0 2px",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      📊 TABLE
+                    </button>
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      style={{
+                        background: viewMode === "grid" ? "#C9A84C22" : "none",
+                        border: `1px solid ${viewMode === "grid" ? "#C9A84C" : "#2A2318"}`,
+                        color: viewMode === "grid" ? "#C9A84C" : "#6B5E3C",
+                        fontFamily: "var(--font-audiowide)",
+                        fontSize: "9px",
+                        letterSpacing: "0.08em",
+                        padding: "6px 12px",
+                        cursor: "pointer",
+                        borderRadius: "0 2px 2px 0",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      🎬 GRID
+                    </button>
+                  </div>
                 </div>
+
+                {/* TABLE VIEW */}
+                {viewMode === "table" && (
+                  <>
                 <div style={{ padding:"0 16px 16px", overflowX:"auto" }}>
                   <table style={{ width:"100%", borderCollapse:"collapse" }}>
                     <thead>
@@ -1530,6 +1577,27 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
+                  </>
+                )}
+
+                {/* GRID VIEW - v5.4.0 Target Acquisition */}
+                {viewMode === "grid" && (
+                  <PosterGrid
+                    movies={visibleFiltered}
+                    selectedIds={selectedIds}
+                    onToggleSelect={(id) => {
+                      const newSet = new Set(selectedIds);
+                      if (newSet.has(id)) {
+                        newSet.delete(id);
+                      } else {
+                        newSet.add(id);
+                      }
+                      setSelectedIds(newSet);
+                    }}
+                    plexHost={process.env.NEXT_PUBLIC_PLEX_HOST || "http://10.0.0.10:32400"}
+                    plexToken={process.env.NEXT_PUBLIC_PLEX_TOKEN || "GifXg9g3Ao4LcRbpCzwZ"}
+                  />
+                )}
               </div>
             )}
           </div>

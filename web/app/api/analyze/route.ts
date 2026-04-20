@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
           sizeBytes,
           rating:    Math.round(rating * 10) / 10,
           plays,
+          thumb:     item.thumb ? String(item.thumb) : undefined, // v5.4.0 - Poster URL
         };
       })
       .sort((a, b) => b.score - a.score);
