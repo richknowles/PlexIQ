@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect } from "react";
 import ThresholdSlider from "@/components/threshold-slider";
 import LibraryStatsDisplay from "@/components/library-stats";
@@ -352,6 +353,38 @@ const CSS = `
   @media (prefers-reduced-motion: reduce) {
     .hit-target td, .hit-row td { animation:fadeRowOut 0.25s ease-in forwards !important; }
   }
+  /* Weapon Select Modal */
+  .weapon-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px; }
+  .weapon-btn {
+    background:linear-gradient(160deg,#181410 0%,#0D0A04 100%);
+    border:1px solid #2A2318; border-radius:4px; padding:18px 12px;
+    cursor:pointer; transition:all 0.2s; text-align:center; position:relative;
+  }
+  .weapon-btn::before,.weapon-btn::after {
+    content:""; position:absolute; width:8px; height:8px;
+    border-color:#C9A84C55; border-style:solid; opacity:0.6;
+  }
+  .weapon-btn::before { top:3px; left:3px; border-width:1px 0 0 1px; }
+  .weapon-btn::after  { bottom:3px; right:3px; border-width:0 1px 1px 0; }
+  .weapon-btn:hover { border-color:#C9A84C88; background:linear-gradient(160deg,#241C10 0%,#141008 100%); box-shadow:0 0 20px #C9A84C11; }
+  .weapon-btn.active { border-color:#C9A84C; box-shadow:0 0 16px #C9A84C22; }
+  .weapon-icon { font-size:28px; margin-bottom:8px; display:block; }
+  .weapon-name { color:#C9A84C; font-size:11px; letter-spacing:0.15em; font-family:var(--font-audiowide); display:block; }
+  .weapon-desc { color:#4A3F28; font-size:9px; letter-spacing:0.1em; margin-top:4px; display:block; }
+
+  /* Pistol flash */
+  @keyframes pistolFlash {
+    0%   { background:transparent; }
+    4%   { background:rgba(255,255,220,0.9); }
+    15%  { background:transparent; opacity:0.6; max-height:60px; }
+    100% { opacity:0; max-height:0; padding-top:0; padding-bottom:0; overflow:hidden; }
+  }
+  .pistol-hit td { animation:pistolFlash 0.45s ease-out forwards; overflow:hidden; }
+
+  /* Sniper overlay */
+  @keyframes sniperDead   { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
+  @keyframes sniperPulse  { 0%,100% { opacity:1; } 50% { opacity:0.25; } }
+
 
   /* ── Confirmation modal ── */
   .modal-overlay {
@@ -480,6 +513,19 @@ export default function Dashboard() {
     executionTime: number;
     titles: string[];
   } | null>(null);
+
+  // Weapon select + sniper state (v5.3.5)
+  type Weapon = 'tommy' | 'sniper' | 'pistol' | 'c4';
+  type SniperPhase = 'idle' | 'scoping' | 'locked' | 'fired' | 'dead';
+  const [weaponSelectOpen,  setWeaponSelectOpen]  = useState(false);
+  const [selectedWeapon,    setSelectedWeapon]    = useState<Weapon>('tommy');
+  const [sniperPhase,       setSniperPhase]       = useState<SniperPhase>('idle');
+  const [sniperTarget,      setSniperTarget]      = useState<PlexMovie | null>(null);
+  const [sniperPending,     setSniperPending]     = useState<{ toDelete: PlexMovie[]; ratingKeys: string[]; bytesFreed: number; deletedTitles: string[]; startTime: number } | null>(null);
+  const sniperTweensRef    = React.useRef<Array<{ kill(): void }>>([]);
+  const sniperScopeRef     = React.useRef<HTMLDivElement>(null);
+  const sniperCrosshairRef = React.useRef<SVGSVGElement>(null);
+  const sniperFlashRef     = React.useRef<HTMLDivElement>(null);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // HYDRATION FIX - Set mounted flag after client hydration complete
@@ -777,6 +823,12 @@ export default function Dashboard() {
 
   const handleDeleteClick = () => {
     if (!stats || isAnalyzing) return;
+    setWeaponSelectOpen(true);
+  };
+
+  const handleWeaponSelect = (weapon: Weapon) => {
+    setSelectedWeapon(weapon);
+    setWeaponSelectOpen(false);
     setConfirmStep(1);
   };
 
@@ -828,14 +880,25 @@ export default function Dashboard() {
         setConfirmStep(0);
         setPassword("");
 
-        // CHICAGO 3-SHOT EXECUTION ANIMATION (v5.3.4.8)
-        // 3 seconds with NEON flashes + HEAVY smoke - rapid-fire execution
-        console.log("🎯 Chicago Style: Executing", toDeleteIds.size, "titles");
-        setCrumplingIds(toDeleteIds);
-
-        // Wait for full animation to complete before removing from DOM
-        // 3s animation + small buffer
-        await new Promise(r => setTimeout(r, 3200));
+        if (selectedWeapon === 'sniper') {
+          // SNIPER MODE — full-screen scope, fire to confirm
+          const firstTarget = toDelete[0];
+          setSniperTarget(firstTarget);
+          setSniperPending({ toDelete, ratingKeys: toDelete.map(m => m.ratingKey), bytesFreed, deletedTitles, startTime });
+          setSniperPhase('scoping');
+          return; // Sniper flow continues via handleSniperFire
+        } else if (selectedWeapon === 'pistol') {
+          setFadingIds(toDeleteIds);
+          await new Promise(r => setTimeout(r, 500));
+        } else if (selectedWeapon === 'c4') {
+          setCrumplingIds(toDeleteIds);
+          await new Promise(r => setTimeout(r, 800));
+        } else {
+          // TOMMY GUN — Chicago 3-shot execution
+          console.log("🎯 Chicago Style: Executing", toDeleteIds.size, "titles");
+          setCrumplingIds(toDeleteIds);
+          await new Promise(r => setTimeout(r, 3200));
+        }
 
         // Execute actual deletion API call
         const ratingKeys = toDelete.map(m => m.ratingKey);
@@ -897,11 +960,85 @@ export default function Dashboard() {
     setConfirmStep(prev => (prev + 1) as 0|1|2|3);
   };
 
+
+  const handleSniperFire = async () => {
+    if (sniperPhase !== 'locked' || !sniperPending) return;
+    setSniperPhase('fired');
+    const { gsap } = await import('gsap');
+    sniperTweensRef.current.forEach(t => t.kill());
+
+    // Flash + recoil
+    if (sniperFlashRef.current) {
+      gsap.set(sniperFlashRef.current, { opacity: 1 });
+      gsap.to(sniperFlashRef.current, { opacity: 0, duration: 0.4, ease: 'power3.out' });
+    }
+    if (sniperCrosshairRef.current) {
+      gsap.to(sniperCrosshairRef.current, {
+        scale: 1.2, y: -10, duration: 0.07, ease: 'power4.out',
+        onComplete: () => {
+          if (sniperScopeRef.current) gsap.to(sniperScopeRef.current, { opacity: 0, duration: 0.5, delay: 0.1 });
+        }
+      });
+    }
+
+    // Let the scope fade, then do the actual deletion
+    await new Promise(r => setTimeout(r, 800));
+    setSniperPhase('dead');
+    await new Promise(r => setTimeout(r, 1200));
+
+    // Now execute real deletion
+    const { toDelete, ratingKeys, bytesFreed, deletedTitles, startTime } = sniperPending;
+    const toDeleteIds = new Set(toDelete.map(m => m.id));
+    try {
+      await fetch('/api/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ratingKeys }),
+      });
+      setMovies(prev => prev.filter(m => !toDeleteIds.has(m.id)));
+      setSelectedIds(new Set());
+
+      const newEntry = { timestamp: new Date().toISOString(), titles: deletedTitles, count: toDelete.length, bytesFreed };
+      const existing = JSON.parse(localStorage.getItem('plexiq_hitList') || '[]');
+      existing.push(newEntry);
+      localStorage.setItem('plexiq_hitList', JSON.stringify(existing));
+      setHitList(existing);
+
+      const executionTime = (Date.now() - startTime) / 1000;
+      setDeletionStats({ count: toDelete.length, bytesFreed, executionTime, titles: deletedTitles });
+    } catch (err) {
+      console.error('Delete API failed:', err);
+      alert('Deletion failed. Check server connection.');
+    } finally {
+      setSniperPhase('idle');
+      setSniperTarget(null);
+      setSniperPending(null);
+      sniperTweensRef.current = [];
+    }
+  };
+
   const cancelConfirm = () => { setConfirmStep(0); setPassword(""); setPwdError(false); };
 
   // HIT LIST = ONLY manually checked items (must explicitly check to delete)
   const cutListCount   = selectedIds.size; // Only checked items get deleted
   const deleteTargets  = selectedIds.size; // Same - only checked items
+
+  // Sniper scope activation
+  React.useEffect(() => {
+    if (sniperPhase !== 'scoping') return;
+    let cancelled = false;
+    (async () => {
+      const { gsap } = await import('gsap');
+      if (cancelled) return;
+      if (sniperScopeRef.current) gsap.fromTo(sniperScopeRef.current, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power2.out' });
+      const breathe = gsap.to(sniperCrosshairRef.current, { x: 7, y: -5, rotation: 1.5, duration: 2.4, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+      sniperTweensRef.current.push(breathe);
+      await new Promise(r => setTimeout(r, 1200));
+      if (!cancelled) setSniperPhase('locked');
+    })();
+    return () => { cancelled = true; };
+  }, [sniperPhase]);
+
   const showPoliceLights = !isDryRun && confirmStep > 0;
 
   // 💣 BOMB BUILDER - Chicago Mob Hit Planning (v5.3.4.9)
@@ -1692,6 +1829,124 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+
+      {/* ── WEAPON SELECT MODAL ── */}
+      {weaponSelectOpen && (
+        <div className="modal-overlay" onClick={() => setWeaponSelectOpen(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
+            <p style={{ color: '#8B6914', fontSize: 9, letterSpacing: '0.2em', margin: '0 0 4px' }}>THE FAMILY ARMORY</p>
+            <p style={{ color: '#C9A84C', fontSize: 15, letterSpacing: '0.15em', fontFamily: 'var(--font-audiowide)', margin: '0 0 4px' }}>SELECT YOUR WEAPON</p>
+            <div className="deco-sep" style={{ margin: '12px 0' }} />
+            <p style={{ color: '#4A3F28', fontSize: 10, letterSpacing: '0.1em', margin: '0 0 4px' }}>
+              {selectedIds.size} TARGET{selectedIds.size !== 1 ? 'S' : ''} MARKED
+            </p>
+            <div className="weapon-grid">
+              <button className={`weapon-btn${selectedWeapon === 'pistol' ? ' active' : ''}`} onClick={() => handleWeaponSelect('pistol')}>
+                <span className="weapon-icon">🔫</span>
+                <span className="weapon-name">PISTOL</span>
+                <span className="weapon-desc">Quick. Clean. One shot.</span>
+              </button>
+              <button className={`weapon-btn${selectedWeapon === 'tommy' ? ' active' : ''}`} onClick={() => handleWeaponSelect('tommy')}>
+                <span className="weapon-icon">💥</span>
+                <span className="weapon-name">TOMMY GUN</span>
+                <span className="weapon-desc">Chicago style. No witnesses.</span>
+              </button>
+              <button className={`weapon-btn${selectedWeapon === 'sniper' ? ' active' : ''}`} onClick={() => handleWeaponSelect('sniper')}>
+                <span className="weapon-icon">🎯</span>
+                <span className="weapon-name">SNIPER</span>
+                <span className="weapon-desc">Precision. Distance. Silence.</span>
+              </button>
+              <button className={`weapon-btn${selectedWeapon === 'c4' ? ' active' : ''}`} onClick={() => handleWeaponSelect('c4')}>
+                <span className="weapon-icon">💣</span>
+                <span className="weapon-name">C4</span>
+                <span className="weapon-desc">Scorched earth. No trace.</span>
+              </button>
+            </div>
+            <div className="deco-sep" style={{ margin: '16px 0 12px' }} />
+            <button className="u-btn" onClick={() => setWeaponSelectOpen(false)}>CANCEL</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── SNIPER OVERLAY ── */}
+      {(sniperPhase === 'scoping' || sniperPhase === 'locked' || sniperPhase === 'fired' || sniperPhase === 'dead') && sniperTarget && (
+        <div
+          onClick={sniperPhase === 'locked' ? handleSniperFire : undefined}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 500,
+            cursor: sniperPhase === 'locked' ? 'crosshair' : 'default',
+            background: '#050505',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {sniperPhase !== 'dead' && (
+            <>
+              {/* Scope dark surround */}
+              <div ref={sniperScopeRef} style={{ position: 'absolute', inset: 0, opacity: 0 }}>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'radial-gradient(circle 190px at 50% 50%, transparent 188px, rgba(0,0,0,0.96) 192px)',
+                }} />
+                {/* Crosshair SVG */}
+                <svg ref={sniperCrosshairRef} viewBox="0 0 400 400" style={{
+                  position: 'absolute', width: 380, height: 380,
+                  left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
+                  overflow: 'visible',
+                }}>
+                  <circle cx="200" cy="200" r="188"
+                    fill="none"
+                    stroke={sniperPhase === 'locked' ? 'rgba(255,30,30,0.7)' : 'rgba(200,200,200,0.2)'}
+                    strokeWidth={sniperPhase === 'locked' ? '2' : '1.5'} />
+                  <circle cx="200" cy="200" r="178" fill="none" stroke="rgba(200,200,200,0.08)" strokeWidth="0.5" />
+                  <line x1="12"  y1="200" x2="150" y2="200" stroke="rgba(220,50,50,0.85)" strokeWidth="1" />
+                  <line x1="250" y1="200" x2="388" y2="200" stroke="rgba(220,50,50,0.85)" strokeWidth="1" />
+                  <line x1="200" y1="12"  x2="200" y2="150" stroke="rgba(220,50,50,0.85)" strokeWidth="1" />
+                  <line x1="200" y1="250" x2="200" y2="388" stroke="rgba(220,50,50,0.85)" strokeWidth="1" />
+                  <circle cx="200" cy="200" r="2.5" fill="rgba(220,50,50,0.95)" />
+                  {[115,135,155,245,265,285].map(x => <circle key={`h${x}`} cx={x} cy="200" r="1.2" fill="rgba(200,200,200,0.45)" />)}
+                  {[115,135,155,245,265,285].map(y => <circle key={`v${y}`} cx="200" cy={y} r="1.2" fill="rgba(200,200,200,0.45)" />)}
+                  {Array.from({ length: 36 }, (_, i) => {
+                    const a = (i / 36) * Math.PI * 2;
+                    const inner = i % 4 === 0 ? 165 : 170;
+                    return <line key={i} x1={200+Math.cos(a)*inner} y1={200+Math.sin(a)*inner} x2={200+Math.cos(a)*178} y2={200+Math.sin(a)*178} stroke="rgba(200,200,200,0.25)" strokeWidth={i%4===0?1.2:0.5} />;
+                  })}
+                  {/* HUD */}
+                  <text x="22" y="192" fill="rgba(220,50,50,0.7)" fontSize="7" fontFamily="monospace">SCORE</text>
+                  <text x="22" y="204" fill="rgba(255,255,255,0.7)" fontSize="9" fontFamily="monospace">{sniperTarget.score}</text>
+                  <text x="22" y="218" fill="rgba(220,50,50,0.7)" fontSize="7" fontFamily="monospace">SIZE</text>
+                  <text x="22" y="230" fill="rgba(255,255,255,0.7)" fontSize="9" fontFamily="monospace">{sniperTarget.size}</text>
+                  <text x="378" y="192" fill="rgba(220,50,50,0.7)" fontSize="7" fontFamily="monospace" textAnchor="end">RATING</text>
+                  <text x="378" y="204" fill="rgba(255,255,255,0.7)" fontSize="9" fontFamily="monospace" textAnchor="end">{sniperTarget.rating}</text>
+                  <text x="378" y="218" fill="rgba(220,50,50,0.7)" fontSize="7" fontFamily="monospace" textAnchor="end">PLAYS</text>
+                  <text x="378" y="230" fill="rgba(255,255,255,0.7)" fontSize="9" fontFamily="monospace" textAnchor="end">{sniperTarget.plays}</text>
+                  <text x="200" y="30" fill="rgba(200,200,200,0.5)" fontSize="9" fontFamily="monospace" textAnchor="middle">{sniperTarget.title.toUpperCase()} {sniperTarget.year ? `(${sniperTarget.year})` : ''}</text>
+                  <text x="200" y="382"
+                    fill={sniperPhase === 'locked' ? 'rgba(255,30,30,1)' : 'rgba(220,50,50,0.5)'}
+                    fontSize={sniperPhase === 'locked' ? '10' : '8'}
+                    fontFamily="monospace" textAnchor="middle"
+                    style={{ animation: sniperPhase === 'locked' ? 'sniperPulse 0.7s infinite' : 'none' }}>
+                    {sniperPhase === 'locked' ? '[ CLICK ANYWHERE TO FIRE ]' : 'ACQUIRING TARGET…'}
+                  </text>
+                </svg>
+              </div>
+              {/* Muzzle flash */}
+              <div ref={sniperFlashRef} style={{ position: 'absolute', inset: 0, background: 'white', opacity: 0, pointerEvents: 'none', zIndex: 10 }} />
+            </>
+          )}
+
+          {/* Death screen */}
+          {sniperPhase === 'dead' && (
+            <div style={{ textAlign: 'center', animation: 'sniperDead 0.5s ease-out forwards', fontFamily: 'Georgia, serif' }}>
+              <div style={{ fontSize: 52, marginBottom: 12 }}>🐟</div>
+              <p style={{ color: '#8b0000', fontSize: 13, letterSpacing: 8, margin: 0, fontFamily: 'var(--font-audiowide)' }}>SLEEPS WITH THE FISHES</p>
+              <p style={{ color: '#555', fontSize: 10, letterSpacing: 4, margin: '10px 0 0' }}>
+                {sniperTarget.title.toUpperCase()} · {sniperTarget.size} RECLAIMED
+              </p>
+            </div>
+          )}
         </div>
       )}
 
