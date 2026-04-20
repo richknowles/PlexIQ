@@ -147,7 +147,7 @@ This release wouldn't exist without:
 
 - **ProxMenux** by MacRimi - The inspiration for the entire v4.0 redesign
 - **Rich Knowles** - Vision and requirements
-- **Claude AI** - Development partner
+- **Richard Knowles** - Design, development, and architecture
 - **Plex Community** - Feedback and testing
 
 ### 🔮 What's Next?

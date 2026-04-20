@@ -1,7 +1,7 @@
 # PlexIQ Setup Complete ✅
 
 **Date:** April 4, 2026  
-**Session:** claude/plexiq-install-script-014pS3sejSzGcEM6wsDc92rY
+**Author:** Richard Knowles
 
 ## Status: WORKING ✓
 
