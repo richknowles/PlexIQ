@@ -97,13 +97,13 @@ export default function DeletionFeedback({ count, bytesFreed, executionTime, tit
 
       {/* Header Row */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", marginBottom: "16px" }}>
-        {/* Animated Trash Icon */}
+        {/* Animated Explosion Icon - Bomb detonated! */}
         <div style={{
           fontSize: "42px",
           animation: "trashWiggle 0.4s ease-in-out 0.3s",
           transformOrigin: "bottom center",
         }}>
-          🗑️
+          💥
         </div>
 
         <div style={{ flex: 1 }}>
@@ -116,7 +116,7 @@ export default function DeletionFeedback({ count, bytesFreed, executionTime, tit
             marginBottom: "8px",
             textShadow: "0 0 12px rgba(201,168,76,0.4)",
           }}>
-            THE HIT IS COMPLETE
+            💣 DETONATION COMPLETE 💣
           </div>
 
           {/* Stats */}
@@ -135,7 +135,7 @@ export default function DeletionFeedback({ count, bytesFreed, executionTime, tit
               }}>
                 {count}
               </span>
-              {" "}file{count !== 1 ? 's' : ''} whacked
+              {" "}target{count !== 1 ? 's' : ''} eliminated
             </span>
             <span style={{ color: "#6B7A8D" }}>•</span>
             <span>
