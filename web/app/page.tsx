@@ -468,7 +468,7 @@ export default function Dashboard() {
   const [sortDir,          setSortDir]          = useState<"asc"|"desc">("desc");
 
   // View mode state (v5.4.0 - Target Acquisition)
-  const [viewMode,         setViewMode]         = useState<"table"|"grid">("table");
+  const [viewMode,         setViewMode]         = useState<"table"|"grid">("grid");
 
   // Deletion animation state (v5.3.4)
   const [deletingIds,      setDeletingIds]      = useState<Set<number>>(new Set());
@@ -1150,7 +1150,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            <LibraryStatsDisplay stats={stats} loading={isAnalyzing} selectedCount={selectedIds.size} />
 
             {!stats && !isAnalyzing && (
               <div className="deco-card" style={{ padding:"64px 40px", textAlign:"center" }}>
@@ -1321,52 +1320,64 @@ export default function Dashboard() {
 
             {/* ── THE HIT LIST TABLE/GRID ── */}
             {stats && !isAnalyzing && activeTab === "analyze" && (
-              <div className="deco-card" style={{ padding:0, overflow:"hidden" }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid #2A2318", padding:"0 16px" }}>
-                  <button className={"tab-btn active"}>
-                    🎯 THE HIT LIST ({cutListCount})
-                    {cutListCount === 0 && <span style={{ marginLeft:"8px", color:"#6B5E3C", fontSize:"9px" }}>(check items you want to delete)</span>}
-                    {cutListCount > 0 && filteredMovies.length > cutListCount && <span style={{ marginLeft:"8px", color:"#4A3F28", fontSize:"9px" }}>(of {filteredMovies.length} candidates)</span>}
-                  </button>
-
-                  {/* View Toggle - v5.4.0 */}
-                  <div style={{ display:"flex", gap:"4px", padding:"6px 0" }}>
-                    <button
-                      onClick={() => setViewMode("table")}
-                      style={{
-                        background: viewMode === "table" ? "#C9A84C22" : "none",
-                        border: `1px solid ${viewMode === "table" ? "#C9A84C" : "#2A2318"}`,
-                        color: viewMode === "table" ? "#C9A84C" : "#6B5E3C",
-                        fontFamily: "var(--font-audiowide)",
-                        fontSize: "9px",
-                        letterSpacing: "0.08em",
-                        padding: "6px 12px",
-                        cursor: "pointer",
-                        borderRadius: "2px 0 0 2px",
-                        transition: "all 0.15s",
-                      }}
-                    >
+              <>
+                {/* Compact stats + view toggle bar */}
+                <div style={{ display:"flex", alignItems:"center", gap:"16px", padding:"10px 4px", borderBottom:"1px solid #2A2318", flexWrap:"wrap" }}>
+                  <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"11px", color:"#C9A84C", letterSpacing:"0.08em" }}>
+                    {stats.name?.toUpperCase() || "LIBRARY"}
+                  </span>
+                  <span style={{ fontSize:"9px", color:"#6B5E3C", fontFamily:"var(--font-audiowide)", letterSpacing:"0.1em" }}>
+                    {stats.itemCount} ITEMS
+                  </span>
+                  <span style={{ fontSize:"9px", color:"#6B5E3C", fontFamily:"var(--font-audiowide)", letterSpacing:"0.1em" }}>
+                    {stats.totalSize >= 1e12 ? `${(stats.totalSize/1e12).toFixed(1)} TB` : stats.totalSize >= 1e9 ? `${(stats.totalSize/1e9).toFixed(1)} GB` : `${(stats.totalSize/1e6).toFixed(0)} MB`}
+                  </span>
+                  {stats.deletionCandidates > 0 && (
+                    <span style={{ fontSize:"9px", color:"#E84040", fontFamily:"var(--font-audiowide)", letterSpacing:"0.1em" }}>
+                      🎯 {stats.deletionCandidates} TARGETS
+                    </span>
+                  )}
+                  {selectedIds.size > 0 && (
+                    <span style={{ fontSize:"9px", color:"#C9A84C", fontFamily:"var(--font-audiowide)", letterSpacing:"0.1em" }}>
+                      💣 {selectedIds.size} SELECTED
+                    </span>
+                  )}
+                  <div style={{ marginLeft:"auto", display:"flex", gap:"4px" }}>
+                    <button onClick={() => setViewMode("table")} style={{ background:viewMode==="table"?"#C9A84C22":"none", border:`1px solid ${viewMode==="table"?"#C9A84C":"#2A2318"}`, color:viewMode==="table"?"#C9A84C":"#6B5E3C", fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.08em", padding:"6px 12px", cursor:"pointer", borderRadius:"2px 0 0 2px", transition:"all 0.15s" }}>
                       📊 TABLE
                     </button>
-                    <button
-                      onClick={() => setViewMode("grid")}
-                      style={{
-                        background: viewMode === "grid" ? "#C9A84C22" : "none",
-                        border: `1px solid ${viewMode === "grid" ? "#C9A84C" : "#2A2318"}`,
-                        color: viewMode === "grid" ? "#C9A84C" : "#6B5E3C",
-                        fontFamily: "var(--font-audiowide)",
-                        fontSize: "9px",
-                        letterSpacing: "0.08em",
-                        padding: "6px 12px",
-                        cursor: "pointer",
-                        borderRadius: "0 2px 2px 0",
-                        transition: "all 0.15s",
-                      }}
-                    >
+                    <button onClick={() => setViewMode("grid")} style={{ background:viewMode==="grid"?"#C9A84C22":"none", border:`1px solid ${viewMode==="grid"?"#C9A84C":"#2A2318"}`, color:viewMode==="grid"?"#C9A84C":"#6B5E3C", fontFamily:"var(--font-audiowide)", fontSize:"9px", letterSpacing:"0.08em", padding:"6px 12px", cursor:"pointer", borderRadius:"0 2px 2px 0", transition:"all 0.15s" }}>
                       🎬 GRID
                     </button>
                   </div>
                 </div>
+
+                {/* GRID VIEW - no wrapper, fills full width */}
+                {viewMode === "grid" && (
+                  <PosterGrid
+                    movies={sortedMovies}
+                    selectedIds={selectedIds}
+                    onToggleSelect={(id) => {
+                      const newSet = new Set(selectedIds);
+                      if (newSet.has(id)) newSet.delete(id);
+                      else newSet.add(id);
+                      setSelectedIds(newSet);
+                    }}
+                    plexHost={process.env.NEXT_PUBLIC_PLEX_HOST || "http://10.0.0.10:32400"}
+                    plexToken={process.env.NEXT_PUBLIC_PLEX_TOKEN || "GifXg9g3Ao4LcRbpCzwZ"}
+                  />
+                )}
+
+                {/* TABLE VIEW */}
+                {viewMode === "table" && (
+                <div className="deco-card" style={{ padding:0, overflow:"hidden" }}>
+                  <div style={{ padding:"10px 16px", borderBottom:"1px solid #2A2318" }}>
+                    <span style={{ fontFamily:"var(--font-audiowide)", fontSize:"10px", color:"#C9A84C", letterSpacing:"0.1em" }}>
+                      🎯 THE HIT LIST ({cutListCount})
+                      {cutListCount === 0 && <span style={{ marginLeft:"8px", color:"#6B5E3C", fontSize:"9px" }}>(check items you want to delete)</span>}
+                      {cutListCount > 0 && filteredMovies.length > cutListCount && <span style={{ marginLeft:"8px", color:"#4A3F28", fontSize:"9px" }}>(of {filteredMovies.length} candidates)</span>}
+                    </span>
+                  </div>
 
                 {/* TABLE VIEW */}
                 {viewMode === "table" && (
