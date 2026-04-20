@@ -11,12 +11,13 @@ function formatSize(bytes: number): string {
 }
 
 // Higher score = more deletable (0–100).
-// Low audience rating + never watched = high score.
-// Items rated >= 8.0 show as high score but UI protects them separately.
-function calcScore(rating: number, plays: number): number {
-  const rFactor = Math.max(0, (8 - rating) / 8);      // 0 at rating 8+, 1 at 0
-  const pFactor = Math.exp(-plays * 0.9);              // 1.0 at 0 plays, ~0.41 at 1
-  return Math.round((0.55 * rFactor + 0.45 * pFactor) * 10000) / 100; // Scale to 0-100
+// Low audience rating + never watched + large file = high score.
+// Weights: Rating 35%, Plays 35%, File Size 30%
+function calcScore(rating: number, plays: number, sizeBytes: number, maxSizeBytes: number): number {
+  const rFactor = Math.max(0, (8 - rating) / 8);               // 0 at rating 8+, 1 at 0
+  const pFactor = Math.exp(-plays * 0.9);                       // 1.0 at 0 plays, ~0.41 at 1
+  const fFactor = maxSizeBytes > 0 ? sizeBytes / maxSizeBytes : 0; // 0–1 normalized to library max
+  return Math.round((0.35 * rFactor + 0.35 * pFactor + 0.30 * fFactor) * 10000) / 100;
 }
 
 export async function GET(req: NextRequest) {
@@ -45,25 +46,32 @@ export async function GET(req: NextRequest) {
     const items: Record<string, unknown>[] = data?.MediaContainer?.Metadata || [];
     const sectionTitle: string = (data?.MediaContainer?.title2 as string) || "Library";
 
-    const movies = items
-      .map((item, idx) => {
-        const media  = (item.Media  as Record<string, unknown>[])?.[0] || {};
-        const part   = (media.Part  as Record<string, unknown>[])?.[0] || {};
-        const sizeBytes: number = Number(part.size) || 0;
-        const rating  = Number(item.audienceRating || item.rating || 0);
-        const plays   = Number(item.viewCount || 0);
-        return {
-          id:        idx + 1,
-          ratingKey: String(item.ratingKey),
-          title:     String(item.title),
-          year:      item.year ? Number(item.year) : undefined,
-          score:     calcScore(rating, plays),
-          size:      formatSize(sizeBytes),
-          sizeBytes,
-          rating:    Math.round(rating * 10) / 10,
-          plays,
-        };
-      })
+    // Pass 1 — collect raw data
+    const rawItems = items.map((item, idx) => {
+      const media    = (item.Media as Record<string, unknown>[])?.[0] || {};
+      const part     = (media.Part as Record<string, unknown>[])?.[0] || {};
+      const sizeBytes: number = Number(part.size) || 0;
+      const rating   = Number(item.audienceRating || item.rating || 0);
+      const plays    = Number(item.viewCount || 0);
+      return {
+        id:        idx + 1,
+        ratingKey: String(item.ratingKey),
+        title:     String(item.title),
+        year:      item.year ? Number(item.year) : undefined,
+        size:      formatSize(sizeBytes),
+        sizeBytes,
+        rating:    Math.round(rating * 10) / 10,
+        plays,
+      };
+    });
+
+    // Pass 2 — normalize file size across library, then score
+    const maxSizeBytes = Math.max(...rawItems.map(i => i.sizeBytes), 1);
+    const movies = rawItems
+      .map(item => ({
+        ...item,
+        score: calcScore(item.rating, item.plays, item.sizeBytes, maxSizeBytes),
+      }))
       .sort((a, b) => b.score - a.score);
 
     const totalSize = movies.reduce((acc, m) => acc + m.sizeBytes, 0);
